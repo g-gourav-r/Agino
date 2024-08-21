@@ -1,0 +1,10 @@
+.dropdown-menu-right {
+    right: 0; 
+    left: auto;
+    margin: 0;
+  }
+  
+  .dropdown-menu {
+    max-width: 200px;
+  }
+  
