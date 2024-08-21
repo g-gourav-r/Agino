@@ -5,6 +5,8 @@ import AginoPage from '../pages/AginoPage';
 import LoginPage from '../pages/LoginPage';
 import SignupPage from '../pages/SignupPage';
 import ConversationWindow from '../pages/ConversationWindow';
+import NotePad from '../pages/NotePad';
+import NoteEditor from '../components/NoteEditor';
 
 function AppRouter() {
     return (
@@ -14,6 +16,10 @@ function AppRouter() {
             <Route path="/user/login" element={<LoginPage />} />
             <Route path="/user/signup" element={<SignupPage />} />
             <Route path="/chat" element={<ConversationWindow />} />
+            <Route path="/notes/" element={<NotePad />}>
+                <Route path="note/:id" element={<NoteEditor />} />
+                <Route path="create" element={<NoteEditor />} />
+            </Route>
         </Routes>
       </Router>
     );
