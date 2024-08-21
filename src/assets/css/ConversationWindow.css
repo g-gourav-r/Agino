@@ -1,0 +1,26 @@
+.full-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+  }
+  
+  .page-wrapper {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+  }
+  
+  .sidebar-area {
+    flex: 0 0 250px;
+    background-color: #1a1a1a;
+    height: 100%;
+    overflow: hidden;
+  }
+  
+  .content-area {
+    flex-grow: 1;
+    overflow-y: auto;
+  }
+  
