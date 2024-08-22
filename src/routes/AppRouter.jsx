@@ -7,6 +7,7 @@ import SignupPage from '../pages/SignupPage';
 import ConversationWindow from '../pages/ConversationWindow';
 import NotePad from '../pages/NotePad';
 import NoteEditor from '../components/NoteEditor';
+import NotFoundPage from '../pages/404';
 
 function AppRouter() {
     return (
@@ -20,6 +21,7 @@ function AppRouter() {
                 <Route path="note/:id" element={<NoteEditor />} />
                 <Route path="create" element={<NoteEditor />} />
             </Route>
+            <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Router>
     );
