@@ -1,16 +1,41 @@
-import React, { useState } from "react";
-import { Container, Row, Col, Button, Spinner, Tooltip, OverlayTrigger } from "react-bootstrap";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  Container,
+  Row,
+  Col,
+  Button,
+  Spinner,
+  Tooltip,
+  OverlayTrigger,
+} from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPaperclip, faPaperPlane, faCopy } from "@fortawesome/free-solid-svg-icons";
+import {
+  faPaperclip,
+  faPaperPlane,
+  faCopy,
+  faDownload,
+} from "@fortawesome/free-solid-svg-icons";
 import "../assets/css/ChatWindow.css";
 
 const ChatWindow = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [loadingMessageId, setLoadingMessageId] = useState(null);
+  const [sessionId, setSessionId] = useState(null); // State for session ID
+  const messageEndRef = useRef(null);
+
+  useEffect(() => {
+    const storedSessionId = localStorage.getItem("sessionId");
+    setSessionId(storedSessionId);
+    if (messageEndRef.current) {
+      messageEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   const sendMessage = async (messageToSend) => {
     if (!messageToSend.trim()) return;
+
+    const currentSessionId = localStorage.getItem("sessionId");
 
     const userMessage = {
       id: Date.now(),
@@ -42,56 +67,95 @@ const ChatWindow = () => {
           email: "prince@gmail.com",
           psid: "1234567890987654",
           message: messageToSend,
-          newSession: true,
-          sessionId: "66c63a11021999ace68f57ee",
+          newSession: !currentSessionId, // Only create a new session if no session ID exists
+          sessionId: currentSessionId || undefined, // Include session ID if it exists
         }),
       });
 
       const data = await response.json();
-      const { SQL_query, DB_response, insight, query_description } = data;
+      console.log(data);
 
-      setMessages((prevMessages) => prevMessages.map(msg =>
-        msg.id === placeholderMessage.id
-          ? {
-              ...msg,
-              message: `Response: ${data.response}\n\nInsight: ${insight}`,
-              followups: data.followup || [],
-              loading: false,
-            }
-          : msg
-      ));
+      const agent_response = data.agent ?? "";
+      const query_description = data.query_description ?? "";
+      const followup = data.followup ?? [];
+      const SQL_query = data.SQL_query ?? "";
+      const DB_response = data.DB_response ?? [];
+      const newSessionId = data.sessionId ?? null; // Fetch new session ID from response if available
 
-      if (SQL_query) {
-        const queryMessage = {
-          id: Date.now() + 2,
+      if (newSessionId) {
+        localStorage.setItem("sessionId", newSessionId); // Store the new session ID
+        setSessionId(newSessionId); // Update the state
+      }
+
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
+          msg.id === placeholderMessage.id
+            ? {
+                ...msg,
+                message: (
+                  <>
+                    {agent_response && <div>{agent_response}</div>}
+                    {SQL_query && (
+                      <div className="code-editor-container">
+                        <pre className="code-block">{SQL_query}</pre>
+                        <OverlayTrigger
+                          placement="top"
+                          overlay={<Tooltip id="copy-tooltip">Copy Query</Tooltip>}
+                        >
+                          <Button
+                            variant="outline-primary"
+                            onClick={() => navigator.clipboard.writeText(SQL_query)}
+                          >
+                            <FontAwesomeIcon icon={faCopy} />
+                          </Button>
+                        </OverlayTrigger>
+                      </div>
+                    )}
+                    {query_description && (
+                      <div className="query-description">
+                        <p>{query_description}</p>
+                      </div>
+                    )}
+                    {DB_response.length > 0 && (
+                      <div className="code-editor-container">
+                        <pre className="code-block">
+                          {JSON.stringify(DB_response, null, 2)}
+                        </pre>
+                        <OverlayTrigger
+                          placement="top"
+                          overlay={<Tooltip id="copy-tooltip">Copy Response</Tooltip>}
+                        >
+                          <Button
+                            variant="outline-primary"
+                            onClick={() =>
+                              navigator.clipboard.writeText(
+                                JSON.stringify(DB_response, null, 2)
+                              )
+                            }
+                          >
+                            <FontAwesomeIcon icon={faCopy} />
+                          </Button>
+                        </OverlayTrigger>
+                      </div>
+                    )}
+                  </>
+                ),
+                followups: followup.length > 0 ? followup : null,
+                loading: false,
+              }
+            : msg
+        )
+      );
+
+      if (followup.length > 0) {
+        const followupMessage = {
+          id: Date.now() + 3,
           sender: "api",
-          message: (
-            <>
-              <div className="sql-query-container">
-                <pre>{SQL_query}</pre>
-                <OverlayTrigger
-                  placement="top"
-                  overlay={<Tooltip id="copy-tooltip">Copy Query</Tooltip>}
-                >
-                  <Button
-                    variant="outline-primary"
-                    onClick={() => navigator.clipboard.writeText(SQL_query)}
-                  >
-                    <FontAwesomeIcon icon={faCopy} />
-                  </Button>
-                </OverlayTrigger>
-              </div>
-              <div className="sql-result-container">
-                <pre>{JSON.stringify(DB_response, null, 2)}</pre>
-              </div>
-              <div className="query-description">
-                <p>{query_description}</p>
-              </div>
-            </>
-          ),
+          message: "Please choose a follow-up action:",
+          followups: followup,
           timestamp: new Date().toLocaleTimeString(),
         };
-        setMessages((prevMessages) => [...prevMessages, queryMessage]);
+        setMessages((prevMessages) => [...prevMessages, followupMessage]);
       }
     } catch (error) {
       console.error("Error sending message:", error);
@@ -111,6 +175,18 @@ const ChatWindow = () => {
     }
   };
 
+  const handleDownload = async () => {
+    if (!sessionId) return; // Only proceed if session ID is present
+
+    try {
+      const response = await fetch(`http://localhost:3000/chatlogBySessionId?sessionId=${sessionId}`);
+      const data = await response.json();
+      console.log("Downloaded Chat History:", data);
+    } catch (error) {
+      console.error("Error downloading chat history:", error);
+    }
+  };
+
   return (
     <Container fluid className="chat-container">
       <Row className="d-flex flex-column h-100">
@@ -122,7 +198,9 @@ const ChatWindow = () => {
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`message ${msg.sender === "user" ? "message-sender" : "message-receiver"}`}
+                className={`message ${
+                  msg.sender === "user" ? "message-sender" : "message-receiver"
+                }`}
               >
                 {msg.sender === "api" ? (
                   <div className="message-content-receiver">
@@ -149,6 +227,15 @@ const ChatWindow = () => {
                               ))}
                             </div>
                           )}
+                          {sessionId && ( // Conditionally render download button
+                            <Button
+                              variant="outline-secondary"
+                              className="mt-2"
+                              onClick={handleDownload}
+                            >
+                              <FontAwesomeIcon icon={faDownload} /> Download Chat
+                            </Button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -165,6 +252,7 @@ const ChatWindow = () => {
                 )}
               </div>
             ))}
+            <div ref={messageEndRef} />
           </div>
           <div className="chat-footer">
             <Button variant="link" className="text-muted px-4">
@@ -185,6 +273,15 @@ const ChatWindow = () => {
             >
               <FontAwesomeIcon icon={faPaperPlane} />
             </Button>
+            {sessionId && ( // Conditionally render download button
+              <Button
+                variant="outline-secondary"
+                className="ms-3 pe-2"
+                onClick={handleDownload}
+              >
+                <FontAwesomeIcon icon={faDownload} /> Download Chat
+              </Button>
+            )}
           </div>
         </Col>
       </Row>

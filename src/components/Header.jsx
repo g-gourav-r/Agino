@@ -45,10 +45,7 @@ const Header = () => {
           <Nav.Link as={Link} to="/">Reports</Nav.Link>
           <Nav.Link as={Link} to="/">Dashboard</Nav.Link>
           <Nav.Link as={Link} to="/notes/">NoteEditor</Nav.Link>
-          <NavDropdown title="Data Source" id="basic-nav-dropdown">
-            <NavDropdown.Item href="#action/3.1">MongoDB</NavDropdown.Item>
-            <NavDropdown.Item href="#action/3.2">Mysql</NavDropdown.Item>
-          </NavDropdown>
+          <Nav.Link as={Link} to="/adddatasource">Data Source</Nav.Link>
         </Nav>
 
         <Dropdown show={dropdownOpen} onClick={toggleDropdown} align="end" className="ms-3 px-4">

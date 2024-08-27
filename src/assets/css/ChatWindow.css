@@ -109,3 +109,29 @@
   flex: 1;
   margin: 0 1rem; /* Space between input and buttons */
 }
+.code-editor-container {
+  background-color: #222324;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 10px;
+  margin-top: 10px;
+  display: flex;
+  align-items: flex-start;
+}
+
+.code-block {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.9rem;
+  color: #dee2e6;
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  flex-grow: 1;
+}
+
+.code-editor-container button {
+  margin-left: 10px;
+  height: 100%;
+  color: #dee2e6;
+  border-color: #dee2e6;
+}

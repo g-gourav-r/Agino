@@ -1,11 +1,15 @@
 import React from 'react';
+import Header from '../components/Header';
 
 const NotFoundPage = () => {
   return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>404</h1>
-      <p style={styles.message}>Page Not Found</p>
-    </div>
+    <>
+    <Header />
+      <div style={styles.container}>
+        <h1 style={styles.title}>404</h1>
+        <p style={styles.message}>Page Not Found</p>
+      </div>
+    </>
   );
 };
 
