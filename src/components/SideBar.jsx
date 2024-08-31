@@ -2,6 +2,18 @@ import { Button, Nav, NavItem } from "reactstrap";
 import user from "../assets/images/user.jpg";
 import userBanner from "../assets/images/UserBanner.jpg";
 
+const handleDownload = async () => {
+    if (!sessionId) return; // Only proceed if session ID is present
+
+    try {
+      const response = await fetch(`${process.env.REACT_APP_SERVER_URL}/chatlogBySessionId?sessionId=${sessionId}`);
+      const data = await response.json();
+      console.log("Downloaded Chat History:", data);
+    } catch (error) {
+      console.error("Error downloading chat history:", error);
+    }
+  };
+
 const Sidebar = () => {
     const showMobilemenu = () => {
         document.getElementById("sidebarArea").classList.toggle("showSidebar");
@@ -28,12 +40,6 @@ const Sidebar = () => {
             </div>
             <div className="p-3 my-2 py-4  bg-light" style={{ height: 'calc(100vh - 150px)', overflowY: 'auto' }}>
                 <Nav vertical className="sidebarNav">
-                        <NavItem className="border-bottom mb-2">
-                            <span className="d-inline-block text-wrap p-2">Item 1</span>
-                        </NavItem>
-                        <NavItem className="border-bottom mb-2">
-                            <span className="d-inline-block text-wrap p-2">Item 2</span>
-                        </NavItem>
                 </Nav>
             </div>
         </div>

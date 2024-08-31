@@ -1,3 +1,6 @@
+body{
+    background-color: #f7f9fa;
+}
 .wrapper {
     width: 420px;
     background-color: white; /* Set background to white */

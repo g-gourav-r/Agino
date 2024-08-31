@@ -1,32 +1,47 @@
 import React, { useState, useEffect, useRef } from "react";
-import {
-  Container,
-  Row,
-  Col,
-  Button,
-  Spinner,
-  Tooltip,
-  OverlayTrigger,
-} from "react-bootstrap";
+import { Container, Row, Col, Button, Spinner, Tooltip, OverlayTrigger, Table } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faPaperclip,
-  faPaperPlane,
-  faCopy,
-  faDownload,
-} from "@fortawesome/free-solid-svg-icons";
+import { faPaperclip, faPaperPlane, faCopy, faDownload } from "@fortawesome/free-solid-svg-icons";
 import "../assets/css/ChatWindow.css";
+
+// Utility function to generate a UUID for unique session IDs
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0,
+          v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+// Retrieve the JWT token from localStorage
+let token = localStorage.getItem('token');
+
+// Retrieve or create a session ID (psid)
+function getPsid() {
+  let psid = localStorage.getItem('psid');
+  if (!psid) {
+    psid = generateUUID();
+    localStorage.setItem('psid', psid);
+  }
+  return psid;
+} 
+
+const psid = getPsid();
+const email = localStorage.getItem('email');
 
 const ChatWindow = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [loadingMessageId, setLoadingMessageId] = useState(null);
-  const [sessionId, setSessionId] = useState(null); // State for session ID
+  const [sessionId, setSessionId] = useState(null);
   const messageEndRef = useRef(null);
 
   useEffect(() => {
+    // Retrieve session ID from localStorage on component mount
     const storedSessionId = localStorage.getItem("sessionId");
     setSessionId(storedSessionId);
+
+    // Scroll to the latest message when messages change
     if (messageEndRef.current) {
       messageEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
@@ -35,8 +50,10 @@ const ChatWindow = () => {
   const sendMessage = async (messageToSend) => {
     if (!messageToSend.trim()) return;
 
+    // Get the current session ID from localStorage
     const currentSessionId = localStorage.getItem("sessionId");
 
+    // Create a user message object and add it to the message list
     const userMessage = {
       id: Date.now(),
       sender: "user",
@@ -45,6 +62,7 @@ const ChatWindow = () => {
     };
     setMessages((prevMessages) => [...prevMessages, userMessage]);
 
+    // Create a placeholder message while waiting for the API response
     const placeholderMessage = {
       id: Date.now() + 1,
       sender: "api",
@@ -58,35 +76,40 @@ const ChatWindow = () => {
     setLoadingMessageId(placeholderMessage.id);
 
     try {
-      const response = await fetch("http://localhost:3000/newMessage", {
+      // Use environment variable for the server endpoint
+      const response = await fetch(`${process.env.REACT_APP_SERVER_URL}/newMessage`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
-          email: "prince@gmail.com",
-          psid: "1234567890987654",
+          email: email,
+          psid: psid,
           message: messageToSend,
-          newSession: !currentSessionId, // Only create a new session if no session ID exists
-          sessionId: currentSessionId || undefined, // Include session ID if it exists
+          database: "classicmodels",
+          newSession: !currentSessionId,
+          sessionId: currentSessionId || undefined,
         }),
       });
 
       const data = await response.json();
-      console.log(data);
 
+      // Extract data from API response
       const agent_response = data.agent ?? "";
       const query_description = data.query_description ?? "";
       const followup = data.followup ?? [];
       const SQL_query = data.SQL_query ?? "";
       const DB_response = data.DB_response ?? [];
-      const newSessionId = data.sessionId ?? null; // Fetch new session ID from response if available
+      const newSessionId = data.sessionId ?? null;
 
+      // Save the new session ID to localStorage if it exists
       if (newSessionId) {
-        localStorage.setItem("sessionId", newSessionId); // Store the new session ID
-        setSessionId(newSessionId); // Update the state
+        localStorage.setItem("sessionId", newSessionId);
+        setSessionId(newSessionId);
       }
 
+      // Update the placeholder message with the actual response
       setMessages((prevMessages) =>
         prevMessages.map((msg) =>
           msg.id === placeholderMessage.id
@@ -117,26 +140,24 @@ const ChatWindow = () => {
                       </div>
                     )}
                     {DB_response.length > 0 && (
-                      <div className="code-editor-container">
-                        <pre className="code-block">
-                          {JSON.stringify(DB_response, null, 2)}
-                        </pre>
-                        <OverlayTrigger
-                          placement="top"
-                          overlay={<Tooltip id="copy-tooltip">Copy Response</Tooltip>}
-                        >
-                          <Button
-                            variant="outline-primary"
-                            onClick={() =>
-                              navigator.clipboard.writeText(
-                                JSON.stringify(DB_response, null, 2)
-                              )
-                            }
-                          >
-                            <FontAwesomeIcon icon={faCopy} />
-                          </Button>
-                        </OverlayTrigger>
-                      </div>
+                      <Table striped bordered hover className="mt-3">
+                        <thead>
+                          <tr>
+                            {Object.keys(DB_response[0]).map((key) => (
+                              <th key={key}>{key}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {DB_response.map((row, index) => (
+                            <tr key={index}>
+                              {Object.values(row).map((value, i) => (
+                                <td key={i}>{value}</td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
                     )}
                   </>
                 ),
@@ -146,17 +167,6 @@ const ChatWindow = () => {
             : msg
         )
       );
-
-      if (followup.length > 0) {
-        const followupMessage = {
-          id: Date.now() + 3,
-          sender: "api",
-          message: "Please choose a follow-up action:",
-          followups: followup,
-          timestamp: new Date().toLocaleTimeString(),
-        };
-        setMessages((prevMessages) => [...prevMessages, followupMessage]);
-      }
     } catch (error) {
       console.error("Error sending message:", error);
     } finally {
@@ -176,10 +186,11 @@ const ChatWindow = () => {
   };
 
   const handleDownload = async () => {
-    if (!sessionId) return; // Only proceed if session ID is present
+    if (!sessionId) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/chatlogBySessionId?sessionId=${sessionId}`);
+      // Use environment variable for the server endpoint
+      const response = await fetch(`${process.env.REACT_APP_SERVER_URL}/chatlogBySessionId?sessionId=${sessionId}`);
       const data = await response.json();
       console.log("Downloaded Chat History:", data);
     } catch (error) {
@@ -192,7 +203,7 @@ const ChatWindow = () => {
       <Row className="d-flex flex-column h-100">
         <Col className="chat-window">
           <div className="chat-header">
-            <h5 className="mb-0">Data Source</h5>
+            <h5 className="mb-0">Chat Window</h5>
           </div>
           <div className="message-container">
             {messages.map((msg) => (
@@ -227,7 +238,7 @@ const ChatWindow = () => {
                               ))}
                             </div>
                           )}
-                          {sessionId && ( // Conditionally render download button
+                          {sessionId && (
                             <Button
                               variant="outline-secondary"
                               className="mt-2"
@@ -266,22 +277,9 @@ const ChatWindow = () => {
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyDown={handleKeyDown}
             />
-            <Button
-              variant="link"
-              className="ms-3 pe-2"
-              onClick={() => sendMessage(newMessage)}
-            >
+            <Button variant="link" className="text-muted px-4" onClick={() => sendMessage(newMessage)}>
               <FontAwesomeIcon icon={faPaperPlane} />
             </Button>
-            {sessionId && ( // Conditionally render download button
-              <Button
-                variant="outline-secondary"
-                className="ms-3 pe-2"
-                onClick={handleDownload}
-              >
-                <FontAwesomeIcon icon={faDownload} /> Download Chat
-              </Button>
-            )}
           </div>
         </Col>
       </Row>
