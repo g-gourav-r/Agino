@@ -1,11 +1,11 @@
 import React from "react";
-import Sidebar from "../components/SideBar";
 import Header from "../components/Header";
-import ChatComponent from "../components/ChatWindow";
+import DatabaseConfig from "../components/DatabaseConfig";
 import { Container } from "reactstrap";
 import "../assets/css/ConversationWindow.css";
+import SideBarBlank from "../components/SideBarBlank";
 
-const ConversationWindow = () => {
+const DataSource = () => {
   return (
     <main className="full-layout">
       {/********Header**********/}
@@ -13,13 +13,13 @@ const ConversationWindow = () => {
       <div className="page-wrapper">
         {/********Sidebar**********/}
         <aside className="sidebar-area shadow" id="sidebarArea">
-          <Sidebar />
+          <SideBarBlank />
         </aside>
         {/********Content Area**********/}
         <div className="content-area">
           {/********Middle Content**********/}
           <Container className="p-0" fluid>
-            <ChatComponent />
+            <DatabaseConfig />
           </Container>
         </div>
       </div>
@@ -27,4 +27,4 @@ const ConversationWindow = () => {
   );
 };
 
-export default ConversationWindow;
+export default DataSource;
