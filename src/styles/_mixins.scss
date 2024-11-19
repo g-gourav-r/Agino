@@ -1,0 +1,22 @@
+@mixin button($bg-color, $color, $hover-bg-color, $hover-color, $border-color) {
+  background-color: $bg-color;
+  color: $color;
+  border: 1px solid $border-color;
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s,
+    box-shadow 0.3s;
+
+  &:hover {
+    background-color: $hover-bg-color;
+    color: $hover-color;
+    border: 1px solid $border-color;
+    box-shadow: 0 0 0 3px rgba($border-color, 0.3);
+  }
+
+  &:focus {
+    border-color: $border-color;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba($border-color, 0.3);
+    background-color: transparent;
+    color: $hover-color;
+  }
+}

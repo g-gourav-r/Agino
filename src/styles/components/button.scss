@@ -1,0 +1,24 @@
+@use "../mixins" as *;
+@use "../_variables" as *;
+
+.btn-green {
+  @include button(
+    $primary-color,  // background color
+    $white,           // text color
+    $white,           // hover background color
+    $primary-color,   // hover text color
+    $primary-color    // border color
+  );
+}
+
+.btn-black {
+  @include button(
+    $white,           // background color
+    $black,           // text color
+    $black,           // hover background color
+    $white,           // hover text color
+    $black            // border color
+  );
+}
+
+
