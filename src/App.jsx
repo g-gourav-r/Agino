@@ -1,17 +1,7 @@
 import { useState } from "react";
-import "./App.css";
-
+import AppRouter from "./Routes/Routes";
 function App() {
-  const [count, setCount] = useState(0);
-
-  return (
-    <>
-      <button className="btn-green">test</button>
-      <hr />
-      <button className="btn-black">test</button>
-      <h1>Vite /\5 React</h1>
-    </>
-  );
+  return <AppRouter />;
 }
 
 export default App;

@@ -1,0 +1,23 @@
+@use "./_variables" as *;
+@use "./_mixins" as *;
+@use "./components/button.scss" as *;
+@use "./components/pageTemplate.scss" as *;
+@use "./components/authPage.scss" as *;
+@use "./components/scrollBar.scss" as *;
+@use "./components/notePad.scss" as *;
+@use "./components/chat.scss" as *;
+
+.text-green {
+  color: $primary-color;
+}
+
+.text-red {
+  color: $red;
+}
+.font-weight-bold {
+  font-weight: bolder;
+}
+
+body {
+  color: $black !important;
+}
