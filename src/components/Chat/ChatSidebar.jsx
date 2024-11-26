@@ -2,7 +2,7 @@ import { React, useEffect, useState } from "react";
 import MutatingDotsLoader from "../Loaders/MutatingDots";
 import createApiCall, { GET } from "../api/api";
 
-function ChatSidebar() {
+function ChatSidebar({ setChatID }) {
   const [loading, setLoading] = useState(false);
   const [chats, setChats] = useState([]);
 
@@ -49,7 +49,9 @@ function ChatSidebar() {
               key={index}
               id={chat._id}
               className="w-100 rounded border-bottom btn-outline note-item mb-2"
-              onClick={() => setNoteID(chat._id)}
+              onClick={() => {
+                setChatID(chat._id);
+              }}
             >
               <div
                 className="px-1 fs-8 text-truncate text-start"

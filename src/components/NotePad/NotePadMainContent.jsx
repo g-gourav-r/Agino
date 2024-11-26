@@ -87,6 +87,7 @@ function NotePadMainContent({ setRefresh, noteID }) {
       const fetchNotesAPI = createApiCall(`api/notes/${noteID}`);
 
       fetchNotesAPI({
+        urlParams: { noteID: noteID },
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",

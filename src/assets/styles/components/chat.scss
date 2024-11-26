@@ -8,3 +8,16 @@
     color: $primary-color;
   }
 }
+
+.chat-bubbles {
+  .chat-human {
+    border: 1px solid $primary-color;
+    border-radius: 10px 10px 0px 10px;
+    box-shadow: 1px brown;
+  }
+
+  .ai {
+    border: 1px solid $primary-color;
+    border-radius: 10px 10px 10px 0px;
+  }
+}
