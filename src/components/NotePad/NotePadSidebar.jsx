@@ -54,14 +54,14 @@ function NotePadSidebar({ refreshNotesSideBar, setNoteID }) {
         <div className="notes-list m-2">
           {/* Render list of notes */}
           {notes.map((note) => (
-            <div
+            <button
               key={note._id}
               id={note._id}
               className="w-100 rounded btn-outline border-bottom note-item p-1 mb-2"
               onClick={() => setNoteID(note._id)}
             >
               <p className="p-0 m-0">{note.title}</p>
-            </div>
+            </button>
           ))}
         </div>
       ) : (

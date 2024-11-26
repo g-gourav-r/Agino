@@ -1,22 +1,21 @@
-import React from 'react';
+import React from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCopy } from "@fortawesome/free-solid-svg-icons";
+import { toast } from "react-toastify";
 
 const CodeEditor = ({ SQL_query }) => {
   if (!SQL_query) return null;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(SQL_query);
+    toast.info("Copied to clipboard", { autoClose: 200 });
   };
 
   return (
     <div className="code-editor-container">
       <pre className="code-block">{SQL_query}</pre>
-      <button
-        className="copy-button"
-        onClick={copyToClipboard}
-        onMouseOver={(e) => e.currentTarget.classList.add('hover')}
-        onMouseOut={(e) => e.currentTarget.classList.remove('hover')}
-      >
-        <i className="bi bi-clipboard"></i>
+      <button className="copy-button" onClick={copyToClipboard}>
+        <FontAwesomeIcon icon={faCopy} />
       </button>
     </div>
   );

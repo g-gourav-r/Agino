@@ -1,0 +1,37 @@
+.code-editor-container {
+  position: relative;
+  background-color: #2e2e2e;
+  color: #e0e0e0;
+  border-radius: 3px;
+  overflow: hidden;
+  max-width: 100%;
+  max-height: 200px;
+}
+
+.code-block {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin: 0;
+  font-family: monospace;
+  font-size: 12px;
+  padding: 10px;
+}
+
+.copy-button {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  transform: translateY(-50%);
+  color: #e0e0e0;
+  border: none;
+  background-color: transparent;
+  padding: 4px;
+  cursor: pointer;
+  z-index: 1;
+
+  &:hover {
+    background-color: #e0e0e0;
+    border-radius: 5px;
+    color: #2e2e2e;
+  }
+}

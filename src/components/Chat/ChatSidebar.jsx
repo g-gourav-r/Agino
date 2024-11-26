@@ -11,6 +11,17 @@ function ChatSidebar({ setChatID }) {
   const appData = JSON.parse(localStorage.getItem("appData"));
   const token = appData?.token;
 
+  const clearCurrentChatHistory = () => {
+    const appData = JSON.parse(localStorage.getItem("appData")) || {};
+
+    if (appData.chatData) {
+      delete appData.chatData.selectedDataSource;
+      delete appData.chatData.sessionID;
+    }
+
+    localStorage.setItem("appData", JSON.stringify(appData));
+  };
+
   useEffect(() => {
     if (!token) return;
 
@@ -35,7 +46,15 @@ function ChatSidebar({ setChatID }) {
   return (
     <div className="d-flex flex-grow-1 flex-column h-100">
       <div className="text-center m-2">
-        <button className="w-100 btn-green rounded">Start a New Chat</button>
+        <button
+          className="w-100 btn-green rounded"
+          onClick={() => {
+            setChatID(null); // Temporarily reset chatID
+            setTimeout(() => setChatID("new_chat"), 0); // Re-set to "new_chat"
+          }}
+        >
+          Start a New Chat
+        </button>
       </div>
       {loading ? (
         <div className="d-flex justify-content-center align-items-center flex-grow-1">
@@ -45,12 +64,13 @@ function ChatSidebar({ setChatID }) {
         <div className="notes-list m-2">
           {/* Render list of notes */}
           {chats.map((chat, index) => (
-            <div
+            <button
               key={index}
               id={chat._id}
               className="w-100 rounded border-bottom btn-outline note-item mb-2"
               onClick={() => {
                 setChatID(chat._id);
+                clearCurrentChatHistory();
               }}
             >
               <div
@@ -62,7 +82,7 @@ function ChatSidebar({ setChatID }) {
                   {new Date(chat.startTime).toLocaleString()}
                 </small>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       ) : (

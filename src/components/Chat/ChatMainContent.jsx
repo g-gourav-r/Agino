@@ -1,10 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faDatabase, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
-import createApiCall, { GET } from "../api/api";
+import createApiCall, { GET, POST } from "../api/api";
 import { ToastContainer, toast } from "react-toastify";
 import MutatingDotsLoader from "../Loaders/MutatingDots";
+import { Tabs, Tab } from "react-bootstrap";
+import ReactMarkdown from "react-markdown";
+
+import CodeEditor from "./chatUtilityComponents/CodeEditor";
+import VisualizeData from "./chatUtilityComponents/VisualizeData";
 
 function ChatMainContent({ selectedChatId }) {
   const navigate = useNavigate();
@@ -12,15 +17,39 @@ function ChatMainContent({ selectedChatId }) {
   const [loading, setLoading] = useState(false);
   const [chat, setChat] = useState("");
   const [isHistoricChat, setChatHistory] = useState("");
-  const [selectedDataSource, setSelectedDataSource] = useState("");
-  const [newSession, setNewSession] = useState(false);
   const [messages, setMessages] = useState([]);
+  const [loadingMessages, setLoadingMessages] = useState([]);
+  const [currentDataBase, setCurrentDataBase] = useState("");
+  const lastMessageRef = useRef(null);
 
   const connectedDataSourcesApi = createApiCall("connecteddatabases", GET);
   const fetchChatHistory = createApiCall(`chatlogBySessionId`);
+  const newMessageApi = createApiCall("newMessage", POST);
 
   const appData = JSON.parse(localStorage.getItem("appData"));
   const token = appData?.token;
+  const psid = appData?.psid;
+  const sessionId = appData?.chatData?.sessionID;
+  const selectedDataSource = appData?.chatData?.selectedDataSource;
+
+  // Start new chat
+  const handleNewSession = () => {
+    const appData = JSON.parse(localStorage.getItem("appData")) || {};
+
+    const updatedAppData = {
+      ...appData,
+      chatData: {
+        ...(appData.chatData || {}),
+      },
+    };
+
+    delete updatedAppData.chatData.sessionID;
+    delete updatedAppData.chatData.selectedDataSource;
+
+    localStorage.setItem("appData", JSON.stringify(updatedAppData));
+    setChatHistory(false);
+    setMessages([]);
+  };
 
   // Fetch the connected DBSources
   useEffect(() => {
@@ -44,31 +73,127 @@ function ChatMainContent({ selectedChatId }) {
       });
   }, []);
 
+  const setDataSource = (data) => {
+    const appData = JSON.parse(localStorage.getItem("appData")) || {};
+    appData.chatData = {
+      ...appData.chatData,
+      selectedDataSource: data,
+    };
+    localStorage.setItem("appData", JSON.stringify(appData));
+  };
+  useEffect(() => {
+    if (chat) {
+      handleNewMessage(chat);
+    }
+  }, [chat]);
+
   // Fetch chat history
   useEffect(() => {
-    if (selectedChatId) {
-      setChatHistory(true);
+    let urlParams = {};
+
+    if (
+      (selectedChatId !== "new_chat" && selectedChatId !== null) ||
+      sessionId
+    ) {
+      if (!sessionId) {
+        setChatHistory(true);
+        urlParams = { sessionId: selectedChatId };
+      } else {
+        urlParams = { sessionId: sessionId };
+      }
+
       setLoading(true);
+
       fetchChatHistory({
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        urlParams: { sessionId: selectedChatId },
-      }).then((respose) => {
-        setMessages(respose.data);
-        setLoading(false);
-      });
+        urlParams: urlParams,
+      })
+        .then((response) => {
+          setMessages(response.data);
+          setLoading(false);
+        })
+        .catch((error) => {
+          console.error("Error fetching chat history:", error);
+          setLoading(false);
+        });
+    } else {
+      handleNewSession();
     }
-  }, [selectedChatId]);
+  }, [selectedChatId, sessionId]);
 
   const handleNewMessage = () => {
-    if (selectedDataSource.trim().length < 1) {
-      toast.error("Please select a Data Source !", { autoClose: 500 });
+    if (!selectedDataSource) {
+      toast.error("Please select a Data Source!", { autoClose: 500 });
     } else {
       if (chat.trim().length > 1) {
-        setNewSession(true);
-        alert(chat);
+        const newMessage = {
+          message: [{ human: chat }],
+          context: {},
+        };
+
+        setMessages((prevMessages) => [...prevMessages, newMessage]);
+        setLoadingMessages((prevLoading) => [...prevLoading, chat]);
+
+        setChat("");
+        const body = {
+          message: chat,
+          database: selectedDataSource,
+          psid: psid,
+          ...(sessionId ? { sessionId: sessionId } : {}),
+        };
+
+        newMessageApi({
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: body,
+        })
+          .then((response) => {
+            const data = response;
+
+            if (data) {
+              const appData = JSON.parse(localStorage.getItem("appData"));
+              const updatedAppData = {
+                ...appData,
+                chatData: {
+                  ...appData.chatData,
+                  sessionID: data.sessionId,
+                },
+              };
+              localStorage.setItem("appData", JSON.stringify(updatedAppData));
+
+              const responseMessage = {
+                message: [{ human: chat }], // User's message
+                context: {
+                  agent: data.agent || "No agent response", // Default value if agent is missing
+                  SQL_query: data.SQL_query || "",
+                  query_description: data.query_description || "",
+                  followup: data.followup ? [data.followup] : [],
+                  DB_response: data.DB_response || [],
+                  error: "", // If there is an error, it can be added here
+                },
+              };
+
+              setMessages((prevMessages) => [
+                ...prevMessages.slice(0, -1), // Remove the placeholder message
+                responseMessage,
+              ]);
+              setLoadingMessages((prevLoading) =>
+                prevLoading.filter((msg) => msg !== chat)
+              ); // Remove loading message
+            } else {
+              toast.error("Error: Missing response data.", { autoClose: 500 });
+              console.error("Error: Missing response data.");
+            }
+          })
+          .catch((error) => {
+            toast.error("Error sending message", { autoClose: 500 });
+            console.error("Error sending message:", error);
+          });
       }
     }
   };
@@ -76,7 +201,20 @@ function ChatMainContent({ selectedChatId }) {
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !isHistoricChat) {
       e.preventDefault();
-      handleSend();
+      handleNewMessage();
+    }
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    if (lastMessageRef.current) {
+      lastMessageRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      });
     }
   };
 
@@ -104,16 +242,20 @@ function ChatMainContent({ selectedChatId }) {
                         className="btn-menu rounded"
                         name="dataSource"
                         id="dataSource"
-                        disabled={newSession}
+                        disabled={sessionId && selectedDataSource}
+                        value={selectedDataSource || currentDataBase || ""}
                         onChange={(e) => {
                           const selectedOption =
                             e.target.options[e.target.selectedIndex];
-                          setSelectedDataSource(
+                          setDataSource(
+                            selectedOption.getAttribute("data-key")
+                          );
+                          setCurrentDataBase(
                             selectedOption.getAttribute("data-key")
                           );
                         }}
                       >
-                        <option value="" disabled selected>
+                        <option value="" disabled>
                           Select a Data Source
                         </option>
                         {dataSources.map((dataSource, index) => (
@@ -152,63 +294,128 @@ function ChatMainContent({ selectedChatId }) {
               id="chat-body"
               className="chat-body border chat-content overflow-auto mx-2 mb-2 rounded flex-grow-1 p-2"
             >
-              {messages.map((msg) => (
-                <div key={msg._id} className="chat-bubbles">
+              {messages.map((msg, index) => (
+                <div key={index} className="chat-bubbles">
                   {/* User Message */}
-                  {msg.message.map((dialogue, index) => (
-                    <div key={index}>
-                      <div className="w-75 my-2 d-flex justify-content-end ms-auto">
-                        <div className="chat-human  text-end p-2 bg-light shadow rounded">
+                  {msg.message.map((dialogue, idx) => (
+                    <div key={idx}>
+                      <div className="my-2 d-flex justify-content-end ms-auto">
+                        <div
+                          className="chat-human bg-light shadow rounded text-wrap text-break text-sm p-1 p-md-2"
+                          style={{ maxWidth: "75%", width: "auto" }}
+                        >
                           {dialogue.human}
                         </div>
                       </div>
                     </div>
                   ))}
 
-                  {/* Agent Response */}
-                  <div className="ai shadow bg-light w-75 my-3">
-                    <div>
-                      <p>{msg.context.agent}</p>
-                    </div>
-                    <div>
-                      <strong>SQL Query:</strong> {msg.context.SQL_query}
-                    </div>
-                    <div>
-                      <strong>Query Description:</strong>{" "}
-                      {msg.context.query_description}
-                    </div>
-                    {msg.context.followup && (
-                      <div>
-                        <strong>Follow-up Questions:</strong>
-                        <ul>
-                          {msg.context.followup.map((item, index) => (
-                            <li key={index}>{item}</li>
-                          ))}
-                        </ul>
+                  {/* Agent Response or Loading Spinner */}
+
+                  {loadingMessages.includes(msg.message[0].human) ? (
+                    // Loader inside chat bubble
+                    <div className="ai shadow bg-white w-25 p-3">
+                      <div className="d-flex justify-content-center align-items-center h-100">
+                        <div
+                          className="spinner-border text-green"
+                          role="status"
+                        >
+                          <span className="visually-hidden">Loading...</span>
+                        </div>
                       </div>
-                    )}
-                    {msg.context.DB_response && (
-                      <div>
-                        <strong>DB Response:</strong>
-                        <ul>
-                          {msg.context.DB_response.map((response, index) => (
-                            <li key={index}>
-                              {Object.entries(response).map(([key, value]) => (
-                                <div key={key}>
-                                  <strong>{key}:</strong> {value}
-                                </div>
-                              ))}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {msg.context.error && msg.context.error !== "" && (
-                      <div>
-                        <strong>Error:</strong> {msg.context.error}
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <div
+                      className="ai shadow bg-white w-75 p-2"
+                      style={{ minHeight: "40vh", fontSize: "0.85rem" }}
+                    >
+                      <Tabs
+                        defaultActiveKey="agent"
+                        id={`ai-response-tabs-${index}`}
+                        className="mb-3"
+                      >
+                        {/* Error Tab */}
+                        {msg.context.error && msg.context.error !== "" && (
+                          <Tab eventKey="error" title="Error">
+                            <div>
+                              <strong>Error:</strong> {msg.context.error}
+                            </div>
+                          </Tab>
+                        )}
+
+                        {/* Agent Tab */}
+                        {msg.context.agent && (
+                          <Tab eventKey="agent" title="Agent">
+                            <div>
+                              <div className="ps-2">
+                                <ReactMarkdown>
+                                  {msg.context.agent}
+                                </ReactMarkdown>
+                              </div>
+
+                              {msg.context.followup &&
+                                msg.context.followup.length > 0 && (
+                                  <>
+                                    <hr className="mx-3 mt-4" />
+                                    <div className="mt-1">
+                                      <div className="row d-flex mx-3">
+                                        {msg.context.followup.map(
+                                          (item, followupIndex) => (
+                                            <div
+                                              className="col-12 col-lg-4 d-flex mb-3"
+                                              key={followupIndex}
+                                            >
+                                              <button
+                                                className={`${
+                                                  isHistoricChat
+                                                    ? "btn-black-disabled"
+                                                    : "btn-black"
+                                                } rounded w-100 p-2 d-flex align-items-center justify-content-center`}
+                                                onClick={() => {
+                                                  setChat(item);
+                                                  handleNewMessage(item);
+                                                }}
+                                              >
+                                                {item}
+                                              </button>
+                                            </div>
+                                          )
+                                        )}
+                                      </div>
+                                    </div>
+                                  </>
+                                )}
+                            </div>
+                          </Tab>
+                        )}
+
+                        {/* SQL Query Tab */}
+                        {msg.context.SQL_query && (
+                          <Tab eventKey="sql-query" title="SQL Query">
+                            <CodeEditor SQL_query={msg.context.SQL_query} />
+                            <div className="py-2">
+                              <ReactMarkdown>
+                                {msg.context.query_description}
+                              </ReactMarkdown>
+                            </div>
+                          </Tab>
+                        )}
+
+                        {/* DB Response Tab */}
+                        {msg.context.DB_response &&
+                          msg.context.DB_response.length > 0 && (
+                            <Tab eventKey="db-response" title="Visualize Data">
+                              <div>
+                                <VisualizeData
+                                  DB_response={msg.context.DB_response}
+                                />
+                              </div>
+                            </Tab>
+                          )}
+                      </Tabs>
+                    </div>
+                  )}
+                  <div ref={lastMessageRef}></div>
                 </div>
               ))}
             </div>

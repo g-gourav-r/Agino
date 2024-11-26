@@ -44,6 +44,7 @@ function WindowTemplate({ currentPage, sideBar, mainContent }) {
   return (
     <div className="container-fluid vh-100 vw-100 background-image p-2 d-flex flex-column">
       <nav
+        id="navigation-bar"
         ref={navbarRef}
         className="navbar navbar-expand-lg d-flex justify-content-between p-0 border rounded"
       >
