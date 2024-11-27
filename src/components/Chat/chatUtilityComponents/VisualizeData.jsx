@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import createApiCall, { POST, GET } from "../../api/api.jsx";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -49,18 +49,26 @@ const downloadReportApi = createApiCall("getSheet", GET);
 const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showGraphModal, setGraphModalVisiblity] = useState(false);
+  const [graphType, setGraphType] = useState("Line");
   const [loading, setLoading] = useState(false);
-  //
-  //
-
   const [selectedX, setSelectedX] = useState("");
   const [selectedY1, setSelectedY1] = useState("");
   const [selectedY2, setSelectedY2] = useState("");
+  const [graphValues, setGraphValues] = useState([]);
+  const [showGraph, setShowGraph] = useState(false);
 
-  // Handle selection changes
-  const handleXChange = (e) => setSelectedX(e.target.value);
-  const handleYChange1 = (e) => setSelectedY1(e.target.value);
-  const handleYChange2 = (e) => setSelectedY2(e.target.value);
+  // States for dynamic chart configurations
+  const [showLegend, setShowLegend] = useState(true);
+  const [legendPosition, setLegendPosition] = useState("top"); // Options: 'top', 'left', 'right', 'bottom'
+  const [xTitle, setXTitle] = useState("");
+  const [y1Title, setY1Title] = useState("");
+  const [y2Title, setY2Title] = useState("");
+  const [y1Position, setY1Position] = useState("left"); // Options: 'left', 'right'
+  const [y2Position, setY2Position] = useState("right"); // Options: 'left', 'right'
+  const [graphTitle, setGraphTitle] = useState("");
+
+  const appData = JSON.parse(localStorage.getItem("appData"));
+  const token = appData?.token;
 
   const rowsPerPage = 5;
 
@@ -84,69 +92,9 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
     setCurrentPage(page);
   };
 
-  // Sample data for the chart
-  const data = {
-    labels: ["January", "February", "March", "April", "May"],
-    datasets: [
-      {
-        label: "Dataset 1",
-        data: [10, 20, 30, 40, 50],
-        backgroundColor: "rgba(75, 192, 192, 0.6)",
-        borderColor: "rgba(75, 192, 192, 1)",
-        borderWidth: 1,
-        yAxisID: "y1", // Associated with y1 axis
-      },
-      {
-        label: "Dataset 2",
-        data: [15, 25, 35, 45, 55],
-        backgroundColor: "rgba(255, 99, 132, 0.6)",
-        borderColor: "rgba(255, 99, 132, 1)",
-        borderWidth: 1,
-        yAxisID: "y2", // Associated with y2 axis
-      },
-    ],
+  const handleGraphTypeChange = (e) => {
+    setGraphType(e.target.value);
   };
-
-  // const options = {
-  //   responsive: true,
-  //   plugins: {
-  //     legend: {
-  //       display: showLegend,
-  //       position: "right",
-  //     },
-  //     title: {
-  //       display: false,
-  //       text: "Dynamic Chart with Multiple Y Axes",
-  //     },
-  //   },
-  //   scales: {
-  //     x: {
-  //       title: {
-  //         display: true,
-  //         text: xAxis,
-  //       },
-  //     },
-  //     y1: {
-  //       type: "linear",
-  //       position: "left",
-  //       title: {
-  //         display: true,
-  //         text: "Y1 Axis",
-  //       },
-  //     },
-  //     y2: {
-  //       type: "linear",
-  //       position: "right",
-  //       title: {
-  //         display: true,
-  //         text: "Y2 Axis",
-  //       },
-  //       grid: {
-  //         drawOnChartArea: false, // Prevent grid lines overlapping with y1
-  //       },
-  //     },
-  //   },
-  // };
 
   const handleCopyGraph = () => {
     const canvas = document.querySelector("#graph-container canvas");
@@ -175,6 +123,116 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
         });
       }
     });
+  };
+
+  const sampleData = {
+    labels: ["January", "February", "March", "April", "May"], // x-axis labels
+    datasets: [
+      {
+        label: "Y1 Parameter", // Dataset for Y1
+        data: [1200, 1900, 800, 1500, 2000],
+        backgroundColor: "rgba(75, 192, 192, 0.6)", // Bar color
+        borderColor: "rgba(75, 192, 192, 1)",
+        borderWidth: 1,
+        yAxisID: "y1", // Linked to the y1 axis
+      },
+      {
+        label: "Y2 Parameter", // Dataset for Y2
+        data: [20, 25, 15, 30, 35],
+        backgroundColor: "rgba(255, 99, 132, 0.6)", // Bar color
+        borderColor: "rgba(255, 99, 132, 1)",
+        borderWidth: 1,
+        yAxisID: "y2", // Linked to the y2 axis
+      },
+    ],
+  };
+
+  // Sample Options
+  const sampleOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "top",
+      },
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: "X axis", // Label for Y1
+        },
+      },
+      y1: {
+        type: "linear", // First Y-axis is linear
+        position: "left",
+        title: {
+          display: true,
+          text: "Y1 Parameter", // Label for Y1
+        },
+      },
+      y2: {
+        type: "linear", // Second Y-axis is linear
+        position: "right",
+        title: {
+          display: true,
+          text: "Y2 Parameter", // Label for Y2
+        },
+        grid: {
+          drawOnChartArea: false, // Prevent grid lines overlapping with Y1
+        },
+        ticks: {
+          callback: (value) => `${value}%`, // Add % to ticks
+        },
+      },
+    },
+  };
+
+  // Dynamic options
+  const options = {
+    responsive: true,
+    plugins: {
+      title: {
+        display: true,
+        text: graphTitle,
+      },
+      legend: showLegend
+        ? {
+            position: legendPosition,
+          }
+        : false,
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: xTitle,
+        },
+      },
+      y1: {
+        type: "linear",
+        position: y1Position,
+        title: {
+          display: true,
+          text: y1Title,
+        },
+      },
+      ...(selectedY2 && {
+        y2: {
+          type: "linear",
+          position: y2Position,
+          title: {
+            display: true,
+            text: y2Title,
+          },
+          grid: {
+            drawOnChartArea: false,
+          },
+          ticks: {
+            callback: (value) => `${value}%`,
+          },
+        },
+      }),
+    },
   };
 
   // Function to copy Table
@@ -216,10 +274,74 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
       });
   };
 
+  // Show Legend
+  const handleShowLegendChange = (e) => {
+    setShowLegend(e.target.value === "true"); // Convert the string value to a boolean
+  };
+
+  // Function to fetch the graph details
+  const handleGenerateGraph = () => {
+    if (
+      selectedX === selectedY1 ||
+      selectedX === selectedY2 ||
+      selectedY1 === selectedY2
+    ) {
+      toast.error("Select unique parameters", { autoClose: 800 });
+      return;
+    } else {
+      setLoading(true);
+      getGraphData({
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: {
+          xaxis: selectedX,
+          yaxis1: selectedY1,
+          yaxis2: selectedY2,
+          chatLogId: ChatLogId,
+        },
+      })
+        .then((response) => {
+          setGraphValues(response.data);
+          setLoading(false);
+          setGraphModalVisiblity(false);
+          setShowGraph(true);
+        })
+        .catch((error) => {
+          setLoading(false);
+          toast.error("Failed to create graph, try again");
+          console.error(`API fetch failed, ${error}`);
+        });
+    }
+  };
+  const renderGraph = () => {
+    switch (graphType) {
+      case "Line":
+        return <Line data={graphValues} />;
+      case "Bar":
+        return <Bar data={graphValues} />;
+      case "Bubble":
+        return <Bubble data={graphValues} />;
+      case "Doughnut":
+        return <Doughnut data={graphValues} />;
+      case "Pie":
+        return <Pie data={graphValues} />;
+      case "PolarArea":
+        return <PolarArea data={graphValues} />;
+      case "Radar":
+        return <Radar data={graphValues} />;
+      case "Scatter":
+        return <Scatter data={graphValues} />;
+      default:
+        return <Line data={graphValues} />; // Default to Line graph
+    }
+  };
+
   return (
     <>
       <div className="row">
-        <div className="col-10">
+        <div className="col-12 col-lg-10">
           <div style={scrollableContainerStyle}>
             <table className="table table-bordered table-hover">
               <thead>
@@ -297,8 +419,7 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
             </nav>
           )}
         </div>
-        <div className="col-2">
-          {/* <hr className="mx-3" /> */}
+        <div className="col-12 col-lg-2">
           {/* Buttons */}
           <div className="visulize-data-btn-grp p-2">
             <button
@@ -318,7 +439,147 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
             </button>
           </div>
         </div>
-      </div>
+      </div>{" "}
+      {showGraph && (
+        <>
+          <div className="btns-grp">
+            <div className="col-2 p-2">
+              <div className="form-group">
+                <label htmlFor="graphType">Select Graph Type:</label>
+                <select
+                  id="graphType"
+                  className="btn-menu"
+                  value={graphType}
+                  onChange={handleGraphTypeChange}
+                >
+                  <option value="Line">Line</option>
+                  <option value="Bar">Bar</option>
+                  <option value="Bubble">Bubble</option>
+                  <option value="Doughnut">Doughnut</option>
+                  <option value="Pie">Pie</option>
+                  <option value="PolarArea">Polar Area</option>
+                  <option value="Radar">Radar</option>
+                  <option value="Scatter">Scatter</option>
+                </select>
+              </div>
+              <div>
+                <button onClick={handleCopyGraph}>Copy graph</button>
+              </div>
+            </div>
+          </div>
+          <div className="rounded chart-container p-2 border">
+            <div
+              id="graph-container"
+              className="p-1 d-flex align-items-center justify-content-center"
+            >
+              <div className="mt-4 w-100">{renderGraph(graphType)}</div>
+            </div>{" "}
+          </div>
+          <div className="">
+            {" "}
+            <div className="container mt-4">
+              <div className="row">
+                {/* Show Legend and Legend Position */}
+                <div className="col-12 col-md-3 mb-3">
+                  <label className="me-2">Show Legend:</label>
+                  <select
+                    value={showLegend ? "true" : "false"} // Display 'true' or 'false' based on the showLegend state
+                    onChange={handleShowLegendChange} // Update the state with boolean value
+                    className="form-select"
+                  >
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
+                  </select>
+
+                  <div className="mt-2">
+                    <label>Legend Position:</label>
+                    <select
+                      value={legendPosition}
+                      onChange={(e) => setLegendPosition(e.target.value)}
+                      className="form-select btn-menu"
+                    >
+                      <option value="top">Top</option>
+                      <option value="left">Left</option>
+                      <option value="right">Right</option>
+                      <option value="bottom">Bottom</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* X Axis Title and Y1 Axis Title */}
+                <div className="col-12 col-md-3 mb-3">
+                  <div className="mb-2">
+                    <label>X Axis Title:</label>
+                    <input
+                      type="text"
+                      value={xTitle}
+                      onChange={(e) => setXTitle(e.target.value)}
+                      className="form-control"
+                    />
+                  </div>
+                  <div className="mb-2">
+                    <label>Y1 Axis Title:</label>
+                    <input
+                      type="text"
+                      value={y1Title}
+                      onChange={(e) => setY1Title(e.target.value)}
+                      className="form-control"
+                    />
+                  </div>
+                </div>
+
+                {/* Y2 Axis Title and Y1 Axis Position */}
+                <div className="col-12 col-md-3 mb-3">
+                  <div className="mb-2">
+                    <label>Y2 Axis Title:</label>
+                    <input
+                      type="text"
+                      value={y2Title}
+                      onChange={(e) => setY2Title(e.target.value)}
+                      className="form-control"
+                    />
+                  </div>
+                  <div className="mb-2">
+                    <label>Y1 Axis Position:</label>
+                    <select
+                      value={y1Position}
+                      onChange={(e) => setY1Position(e.target.value)}
+                      className="form-select"
+                    >
+                      <option value="left">Left</option>
+                      <option value="right">Right</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Y2 Axis Position and Graph Title */}
+                <div className="col-12 col-md-3 mb-3">
+                  <div className="mb-2">
+                    <label>Y2 Axis Position:</label>
+                    <select
+                      value={y2Position}
+                      onChange={(e) => setY2Position(e.target.value)}
+                      className="form-select"
+                    >
+                      <option value="left">Left</option>
+                      <option value="right">Right</option>
+                    </select>
+                  </div>
+                  <div className="mb-2">
+                    <label>Graph Title:</label>
+                    <input
+                      type="text"
+                      value={graphTitle}
+                      onChange={(e) => setGraphTitle(e.target.value)}
+                      className="form-control"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
       {showGraphModal && (
         <div className="modal show d-block">
           <div className="modal-dialog modal-dialog-centered">
@@ -341,19 +602,22 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
                 <p>
                   Select the <span className="text-green">parameters</span>
                 </p>
-                <div className="row p-2 border d-flex flex-row justify-content-between">
+                <Line data={sampleData} options={sampleOptions} />
+                <div className="row p-2 border rounded d-flex flex-row justify-content-between">
                   {/* X-Axis Dropdown (on the left side) */}
-                  <div className="d-flex flex-column align-items-start col-6">
-                    <h3 className="py-2 text-center">X-axis</h3>
-                    <div className="text-center">
+                  <div className="d-flex justify-content-between align-items-center p-2">
+                    <label htmlFor="x-axis">X parameter</label>
+                    <div className="">
                       <select
                         name="x-axis"
                         id="x-axis"
-                        onChange={handleXChange}
+                        onChange={(e) => setSelectedX(e.target.value)}
                         value={selectedX}
                         className="btn-menu rounded"
                       >
-                        <option value="">Select X-axis</option>
+                        <option value="" disabled>
+                          Select a parameter
+                        </option>
                         {headers.map((header, index) => (
                           <option key={index} value={header}>
                             {header}
@@ -364,19 +628,18 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
                   </div>
 
                   {/* Y-Axis Dropdown (on the right side) */}
-                  <div className="d-flex flex-column align-items-end col-6">
-                    <h3 className="text-center py-2">Y-axis</h3>
+                  <div className="d-flex justify-content-between align-items-center p-2">
+                    <label htmlFor="y-axis">Y1 parameter</label>
                     <div>
-                      <label htmlFor="y-axis">Parameter 1</label>
                       <select
                         name="y-axis"
                         id="y-axis"
-                        onChange={handleYChange1}
+                        onChange={(e) => setSelectedY1(e.target.value)}
                         value={selectedY1}
                         className="ms-2 btn-menu rounded"
                       >
                         <option value="" disabled>
-                          Parameter 1
+                          Select a parameter
                         </option>
                         {headers.map((header, index) => (
                           <option key={index} value={header}>
@@ -385,19 +648,19 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
                         ))}
                       </select>
                     </div>
-
+                  </div>
+                  {/* Y2 parameter */}
+                  <div className="d-flex justify-content-between align-items-center p-2">
+                    <label htmlFor="y-axis">Y2 Parameter</label>
                     <div>
-                      <label htmlFor="y-axis">Parameter 2</label>
                       <select
                         name="y-axis"
                         id="y-axis"
-                        onChange={handleYChange2}
+                        onChange={(e) => setSelectedY2(e.target.value)}
                         value={selectedY2}
-                        className="ms-2 btn-menu rounded"
+                        className="btn-menu rounded"
                       >
-                        <option value="" disabled>
-                          Parameter 2
-                        </option>
+                        <option value="">Select a parameter</option>
                         {headers.map((header, index) => (
                           <option key={index} value={header}>
                             {header}
@@ -409,7 +672,14 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
                 </div>
               </div>
               <div className="modal-footer">
-                <h1>footer</h1>
+                <button
+                  className={`${
+                    loading ? "btn-green-disabled" : "btn-green"
+                  } p-1 w-25 rounded`}
+                  onClick={handleGenerateGraph}
+                >
+                  Generate
+                </button>
               </div>
             </div>
           </div>

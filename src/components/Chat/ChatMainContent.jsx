@@ -170,7 +170,6 @@ function ChatMainContent({ selectedChatId }) {
                 },
               };
               localStorage.setItem("appData", JSON.stringify(updatedAppData));
-              console.log(data.chatLogId);
 
               const responseMessage = {
                 message: [{ human: chat }],
@@ -224,8 +223,6 @@ function ChatMainContent({ selectedChatId }) {
       });
     }
   };
-
-  console.log(messages);
 
   return (
     <>

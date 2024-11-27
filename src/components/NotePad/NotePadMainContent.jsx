@@ -69,7 +69,6 @@ function NotePadMainContent({ setRefresh, noteID }) {
     setLoading(true);
 
     if (noteID === "new_note") {
-      console.log("start a new note");
       setTitle("");
       editor.commands.setContent("");
       const appData = JSON.parse(localStorage.getItem("appData"));

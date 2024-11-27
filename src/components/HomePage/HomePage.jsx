@@ -1,11 +1,12 @@
 import WindowTemplate from "../WindowTemplate";
-import ChatSidebar from "../Chat/ChatSidebar";
-import DataSourceMainContent from "../DataSource/DataSourceMainContent";
+import HomePageMainContent from "./HomePageMainContent";
+import HomePageSidebar from "./HomePageSidebar";
+
 function HomePage() {
   return (
     <WindowTemplate
-      sideBar={<ChatSidebar />}
-      mainContent={<DataSourceMainContent />}
+      sideBar={<HomePageSidebar />}
+      mainContent={<HomePageMainContent />}
     />
   );
 }
