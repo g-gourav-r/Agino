@@ -1,7 +1,7 @@
 import WindowTemplate from "../WindowTemplate";
 import ChatMainContent from "./ChatMainContent";
-import ChatSidebar from "./chatSideBar";
-import { useState, useEffect } from "react";
+import ChatSidebar from "./ChatSidebar";
+import { useState } from "react";
 
 function Chat() {
   const [chatID, setChatID] = useState(null);

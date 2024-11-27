@@ -1,8 +1,6 @@
-import React from "react";
 import WindowTemplate from "../WindowTemplate";
-import ChatSidebar from "../Chat/chatSideBar";
+import ChatSidebar from "../Chat/ChatSidebar";
 import DataSourceMainContent from "../DataSource/DataSourceMainContent";
-import NotePadSidebar from "../NotePad/NotePadSidebar";
 function HomePage() {
   return (
     <WindowTemplate

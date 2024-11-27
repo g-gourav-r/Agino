@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import createApiCall, { POST } from "../components/api/api";
-import { v4 as uuidv4 } from "uuid";
+import createApiCall, { POST } from "../api/api";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGoogle } from "@fortawesome/free-brands-svg-icons";
 import {
@@ -69,7 +68,7 @@ function SignupPage() {
     signupApiCall({
       body: { username, email, password },
     })
-      .then((response) => {
+      .then(() => {
         setLoading(false);
         toast.success("Account registered successfully. Please login.", {
           autoClose: 3000,

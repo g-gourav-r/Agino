@@ -1,12 +1,16 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faDatabase, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import createApiCall, { GET, POST } from "../api/api";
 import { ToastContainer, toast } from "react-toastify";
 import MutatingDotsLoader from "../Loaders/MutatingDots";
 import { Tabs, Tab } from "react-bootstrap";
 import ReactMarkdown from "react-markdown";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faDatabase,
+  faPaperPlane,
+  faCopy,
+} from "@fortawesome/free-solid-svg-icons";
 
 import CodeEditor from "./chatUtilityComponents/CodeEditor";
 import VisualizeData from "./chatUtilityComponents/VisualizeData";
@@ -81,6 +85,7 @@ function ChatMainContent({ selectedChatId }) {
     };
     localStorage.setItem("appData", JSON.stringify(appData));
   };
+
   useEffect(() => {
     if (chat) {
       handleNewMessage(chat);
@@ -165,26 +170,28 @@ function ChatMainContent({ selectedChatId }) {
                 },
               };
               localStorage.setItem("appData", JSON.stringify(updatedAppData));
+              console.log(data.chatLogId);
 
               const responseMessage = {
-                message: [{ human: chat }], // User's message
+                message: [{ human: chat }],
                 context: {
-                  agent: data.agent || "No agent response", // Default value if agent is missing
+                  agent: data.agent || "No agent response",
                   SQL_query: data.SQL_query || "",
                   query_description: data.query_description || "",
                   followup: data.followup ? [data.followup] : [],
                   DB_response: data.DB_response || [],
-                  error: "", // If there is an error, it can be added here
+                  error: "",
+                  chatLogID: data.chatLogId,
                 },
               };
 
               setMessages((prevMessages) => [
-                ...prevMessages.slice(0, -1), // Remove the placeholder message
+                ...prevMessages.slice(0, -1),
                 responseMessage,
               ]);
               setLoadingMessages((prevLoading) =>
                 prevLoading.filter((msg) => msg !== chat)
-              ); // Remove loading message
+              );
             } else {
               toast.error("Error: Missing response data.", { autoClose: 500 });
               console.error("Error: Missing response data.");
@@ -217,6 +224,8 @@ function ChatMainContent({ selectedChatId }) {
       });
     }
   };
+
+  console.log(messages);
 
   return (
     <>
@@ -347,10 +356,39 @@ function ChatMainContent({ selectedChatId }) {
                         {msg.context.agent && (
                           <Tab eventKey="agent" title="Agent">
                             <div>
-                              <div className="ps-2">
-                                <ReactMarkdown>
-                                  {msg.context.agent}
-                                </ReactMarkdown>
+                              <div className="ps-2 row">
+                                <div className="col-11">
+                                  <ReactMarkdown>
+                                    {msg.context.agent}
+                                  </ReactMarkdown>
+                                </div>
+                                <div className="col-1">
+                                  <div className="button-group">
+                                    <button
+                                      className="btn-green p-2 rounded"
+                                      onClick={() => {
+                                        const textToCopy = msg.context.agent; // Extract the text content
+                                        navigator.clipboard
+                                          .writeText(textToCopy) // Copy to clipboard
+                                          .then(() => {
+                                            toast.info("Copied to clipboard!", {
+                                              autoClose: 300,
+                                            });
+                                          })
+                                          .catch((err) => {
+                                            toast.error(
+                                              `Failed to copy: ${err}`,
+                                              {
+                                                autoClose: 300,
+                                              }
+                                            );
+                                          });
+                                      }}
+                                    >
+                                      <FontAwesomeIcon icon={faCopy} />
+                                    </button>
+                                  </div>
+                                </div>
                               </div>
 
                               {msg.context.followup &&
@@ -405,11 +443,10 @@ function ChatMainContent({ selectedChatId }) {
                         {msg.context.DB_response &&
                           msg.context.DB_response.length > 0 && (
                             <Tab eventKey="db-response" title="Visualize Data">
-                              <div>
-                                <VisualizeData
-                                  DB_response={msg.context.DB_response}
-                                />
-                              </div>
+                              <VisualizeData
+                                ChatLogId={msg.context?.ChatLogId || msg._id}
+                                DB_response={msg.context.DB_response}
+                              />
                             </Tab>
                           )}
                       </Tabs>
