@@ -14,14 +14,7 @@ function HomePageSidebar() {
       name: "Reports",
       description:
         "Generate detailed reports to analyze and improve your performance.",
-      status: "In Development",
-    },
-    {
-      id: 3,
-      name: "Predictive AI",
-      description:
-        "AI-driven insights to predict future trends and opportunities.",
-      status: "Planning Stage",
+      status: "Coming Soon",
     },
     {
       id: 4,
@@ -33,22 +26,22 @@ function HomePageSidebar() {
       id: 5,
       name: "Collaboration Tools",
       description: "Enhance teamwork with real-time collaboration features.",
-      status: "In Development",
+      status: "Coming Soon",
     },
   ];
 
   return (
-    <div className="sidebar">
-      <h2>Features</h2>
-      <ul>
-        {features.map((feature) => (
-          <li key={feature.id} className="feature-item">
-            <h3>{feature.name}</h3>
-            <p>{feature.description}</p>
-            <small>Status: {feature.status}</small>
-          </li>
-        ))}
-      </ul>
+    <div className="sidebar p-4">
+      <h3 className="text-center text-green">New Features !</h3>
+      {features.map((feature) => (
+        <div key={feature.id} className="feature-item mb-3">
+          <h5 className="text-green">{feature.name}</h5>
+          <p>{feature.description}</p>
+          <small>
+            Status: <span className="text-green">{feature.status}</span>
+          </small>
+        </div>
+      ))}
     </div>
   );
 }
