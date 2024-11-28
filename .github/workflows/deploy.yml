@@ -2,9 +2,9 @@ name: Upload Website
 
 on:
   push:
-    branches: [ "V2" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "V2" ]
+    branches: ["main"]
 
 jobs:
   build:
@@ -17,7 +17,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '20'  # or '18' as per your requirement
+          node-version: "20" # or '18' as per your requirement
 
       - name: Clear npm cache
         run: npm cache clean --force
@@ -49,7 +49,7 @@ jobs:
       - name: Upload to S3
         uses: jakejarvis/s3-sync-action@master
         with:
-          args: --acl public-read
+          args: --acl public-read --no-acl
         env:
           SOURCE_DIR: dist/
           AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
