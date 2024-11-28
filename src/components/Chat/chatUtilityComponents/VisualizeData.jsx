@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import createApiCall, { POST, GET } from "../../api/api.jsx";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChartLine, faCopy } from "@fortawesome/free-solid-svg-icons";
+import {
+  faChartLine,
+  faCopy,
+  faGear,
+  faExpand,
+  faCompress,
+} from "@fortawesome/free-solid-svg-icons";
 
 import {
   Line,
@@ -28,7 +34,6 @@ import {
   ArcElement,
 } from "chart.js";
 import RotatingSquareLoader from "../../Loaders/RotatingSquare";
-import Heading from "@tiptap/extension-heading";
 
 ChartJS.register(
   CategoryScale,
@@ -56,6 +61,7 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
   const [selectedY2, setSelectedY2] = useState("");
   const [graphValues, setGraphValues] = useState([]);
   const [showGraph, setShowGraph] = useState(false);
+  const [showGraphSettings, setGraphSettingsVisiblity] = useState(false);
 
   // States for dynamic chart configurations
   const [showLegend, setShowLegend] = useState(true);
@@ -66,6 +72,7 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
   const [y1Position, setY1Position] = useState("left"); // Options: 'left', 'right'
   const [y2Position, setY2Position] = useState("right"); // Options: 'left', 'right'
   const [graphTitle, setGraphTitle] = useState("");
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   const appData = JSON.parse(localStorage.getItem("appData"));
   const token = appData?.token;
@@ -96,6 +103,7 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
     setGraphType(e.target.value);
   };
 
+  //Copy Graph Button
   const handleCopyGraph = () => {
     const canvas = document.querySelector("#graph-container canvas");
     if (!canvas) {
@@ -125,6 +133,7 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
     });
   };
 
+  // Sample Data for graph
   const sampleData = {
     labels: ["January", "February", "March", "April", "May"], // x-axis labels
     datasets: [
@@ -315,159 +324,174 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
         });
     }
   };
+
+  // Function to render the graph
   const renderGraph = () => {
     switch (graphType) {
       case "Line":
-        return <Line data={graphValues} />;
+        return <Line data={graphValues} options={options} />;
       case "Bar":
-        return <Bar data={graphValues} />;
+        return <Bar data={graphValues} options={options} />;
       case "Bubble":
-        return <Bubble data={graphValues} />;
+        return <Bubble data={graphValues} options={options} />;
       case "Doughnut":
-        return <Doughnut data={graphValues} />;
+        return <Doughnut data={graphValues} options={options} />;
       case "Pie":
-        return <Pie data={graphValues} />;
+        return <Pie data={graphValues} options={options} />;
       case "PolarArea":
-        return <PolarArea data={graphValues} />;
+        return <PolarArea data={graphValues} options={options} />;
       case "Radar":
-        return <Radar data={graphValues} />;
+        return <Radar data={graphValues} options={options} />;
       case "Scatter":
-        return <Scatter data={graphValues} />;
+        return <Scatter data={graphValues} options={options} />;
       default:
-        return <Line data={graphValues} />; // Default to Line graph
+        return <Line data={graphValues} options={options} />; // Default to Line graph
     }
   };
 
   return (
     <>
-      <div className="row">
-        <div className="col-12 col-lg-10">
-          <div style={scrollableContainerStyle}>
-            <table className="table table-bordered table-hover">
-              <thead>
-                <tr>
+      <div>
+        <div style={scrollableContainerStyle}>
+          <table className="table table-bordered table-hover">
+            <thead>
+              <tr>
+                {headers.map((key) => (
+                  <th key={key}>{key}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {currentRows.map((row, index) => (
+                <tr key={index}>
                   {headers.map((key) => (
-                    <th key={key}>{key}</th>
+                    <td key={key}>{row[key]}</td>
                   ))}
                 </tr>
-              </thead>
-              <tbody>
-                {currentRows.map((row, index) => (
-                  <tr key={index}>
-                    {headers.map((key) => (
-                      <td key={key}>{row[key]}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <nav aria-label="Page navigation">
-              <ul className="pagination justify-content-center mt-3">
-                <li
-                  className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <nav aria-label="Page navigation">
+            <ul className="pagination justify-content-center mt-3">
+              <li
+                className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
+              >
+                <button
+                  className="page-link text-black"
+                  onClick={() => handlePageChange(1)}
+                  aria-label="First"
                 >
-                  <button
-                    className="page-link text-black"
-                    onClick={() => handlePageChange(1)}
-                    aria-label="First"
-                  >
-                    <span aria-hidden="true">&laquo;&laquo;</span>
-                  </button>
-                </li>
-                <li
-                  className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
+                  <span aria-hidden="true">&laquo;&laquo;</span>
+                </button>
+              </li>
+              <li
+                className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
+              >
+                <button
+                  className="page-link text-black"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  aria-label="Previous"
                 >
-                  <button
-                    className="page-link text-black"
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    aria-label="Previous"
-                  >
-                    <span aria-hidden="true">&laquo;</span>
-                  </button>
-                </li>
-                <li
-                  className={`page-item ${
-                    currentPage === totalPages ? "disabled" : ""
-                  }`}
+                  <span aria-hidden="true">&laquo;</span>
+                </button>
+              </li>
+              <li
+                className={`page-item ${
+                  currentPage === totalPages ? "disabled" : ""
+                }`}
+              >
+                <button
+                  className="page-link text-black"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  aria-label="Next"
                 >
-                  <button
-                    className="page-link text-black"
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    aria-label="Next"
-                  >
-                    <span aria-hidden="true">&raquo;</span>
-                  </button>
-                </li>
-                <li
-                  className={`page-item ${
-                    currentPage === totalPages ? "disabled" : ""
-                  }`}
+                  <span aria-hidden="true">&raquo;</span>
+                </button>
+              </li>
+              <li
+                className={`page-item ${
+                  currentPage === totalPages ? "disabled" : ""
+                }`}
+              >
+                <button
+                  className="page-link text-black"
+                  onClick={() => handlePageChange(totalPages)}
+                  aria-label="Last"
                 >
-                  <button
-                    className="page-link text-black"
-                    onClick={() => handlePageChange(totalPages)}
-                    aria-label="Last"
-                  >
-                    <span aria-hidden="true">&raquo;&raquo;</span>
-                  </button>
-                </li>
-              </ul>
-            </nav>
-          )}
-        </div>
-        <div className="col-12 col-lg-2">
-          {/* Buttons */}
-          <div className="visulize-data-btn-grp p-2">
-            <button
-              className="btn-green p-1 rounded w-100 m-2 text-start"
-              onClick={handleCopyTable}
+                  <span aria-hidden="true">&raquo;&raquo;</span>
+                </button>
+              </li>
+            </ul>
+          </nav>
+        )}
+      </div>
+      {/* Buttons */}
+      <div className="visulize-data-btn-grp p-2 d-flex">
+        <button
+          className="btn-green p-1 rounded m-2 text-start"
+          onClick={handleCopyTable}
+        >
+          <FontAwesomeIcon className="mx-2" icon={faCopy} /> Copy Table
+        </button>
+        <button
+          className="btn-green p-1 rounded m-2 text-start"
+          onClick={() => {
+            setGraphModalVisiblity(true);
+          }}
+        >
+          <FontAwesomeIcon className="mx-2" icon={faChartLine} /> Generate Graph
+        </button>
+        {showGraph && (
+          <>
+            <select
+              id="graphType"
+              className="btn-green p-1 rounded m-2 text-start"
+              value={graphType}
+              onChange={handleGraphTypeChange}
             >
-              <FontAwesomeIcon className="mx-2" icon={faCopy} /> Copy Table
+              <option value="Line">Line Chart</option>
+              <option value="Bar">Bar Chart</option>
+              <option value="Bubble">Bubble Chart</option>
+              <option value="Doughnut">Doughnut Chart</option>
+              <option value="Pie">Pie Chart</option>
+              <option value="PolarArea">Polar Area Chart</option>
+              <option value="Radar">Radar Chart</option>
+              <option value="Scatter">Scatter Chart</option>
+            </select>
+
+            <button
+              className="btn-green p-1 rounded m-2 text-start"
+              onClick={handleCopyGraph}
+            >
+              <FontAwesomeIcon className="mx-2" icon={faCopy} /> Copy Graph
             </button>
             <button
-              className="btn-green p-1 rounded w-100 m-2 text-start"
-              onClick={() => {
-                setGraphModalVisiblity(true);
-              }}
+              className="btn-green p-1 rounded m-2 text-start"
+              onClick={() => setGraphSettingsVisiblity(true)}
             >
-              <FontAwesomeIcon className="mx-2" icon={faChartLine} /> Generate
-              Graph
+              <FontAwesomeIcon icon={faGear} /> Graph Settings
             </button>
-          </div>
-        </div>
-      </div>{" "}
+            <button
+              className="btn-green p-1 rounded m-2 text-start"
+              onClick={() => setIsModalVisible(true)}
+            >
+              <FontAwesomeIcon className="mx-2" icon={faExpand} />
+              Full Screen
+            </button>
+          </>
+        )}
+      </div>
+
       {showGraph && (
         <>
           <div className="btns-grp">
-            <div className="col-2 p-2">
-              <div className="form-group">
-                <label htmlFor="graphType">Select Graph Type:</label>
-                <select
-                  id="graphType"
-                  className="btn-menu"
-                  value={graphType}
-                  onChange={handleGraphTypeChange}
-                >
-                  <option value="Line">Line</option>
-                  <option value="Bar">Bar</option>
-                  <option value="Bubble">Bubble</option>
-                  <option value="Doughnut">Doughnut</option>
-                  <option value="Pie">Pie</option>
-                  <option value="PolarArea">Polar Area</option>
-                  <option value="Radar">Radar</option>
-                  <option value="Scatter">Scatter</option>
-                </select>
-              </div>
-              <div>
-                <button onClick={handleCopyGraph}>Copy graph</button>
-              </div>
-            </div>
+            <div className="col-2 p-2"></div>
           </div>
-          <div className="rounded chart-container p-2 border">
+          <div className="rounded chart-container p-2 border w-100">
             <div
               id="graph-container"
               className="p-1 d-flex align-items-center justify-content-center"
@@ -475,105 +499,31 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
               <div className="mt-4 w-100">{renderGraph(graphType)}</div>
             </div>{" "}
           </div>
-          <div className="">
-            {" "}
-            <div className="container mt-4">
-              <div className="row">
-                {/* Show Legend and Legend Position */}
-                <div className="col-12 col-md-3 mb-3">
-                  <label className="me-2">Show Legend:</label>
-                  <select
-                    value={showLegend ? "true" : "false"} // Display 'true' or 'false' based on the showLegend state
-                    onChange={handleShowLegendChange} // Update the state with boolean value
-                    className="form-select"
+          <div
+            className={`modal fade ${isModalVisible ? "show d-block" : ""}`}
+            tabIndex="-1"
+            role="dialog"
+          >
+            <div
+              className="modal-dialog modal-dialog-centered modal-lg modal-fullscreen w-100 h-100"
+              role="document"
+            >
+              <div className="modal-content">
+                <div className="modal-header">
+                  <button
+                    type="button"
+                    className="ms-auto btn-green p-1 rounded m-2 text-start"
+                    aria-label="Close"
+                    onClick={() => {
+                      setIsModalVisible(false);
+                    }}
                   >
-                    <option value="true">Yes</option>
-                    <option value="false">No</option>
-                  </select>
-
-                  <div className="mt-2">
-                    <label>Legend Position:</label>
-                    <select
-                      value={legendPosition}
-                      onChange={(e) => setLegendPosition(e.target.value)}
-                      className="form-select btn-menu"
-                    >
-                      <option value="top">Top</option>
-                      <option value="left">Left</option>
-                      <option value="right">Right</option>
-                      <option value="bottom">Bottom</option>
-                    </select>
-                  </div>
+                    <FontAwesomeIcon className="mx-2" icon={faCompress} /> Exit
+                    Fullscreen
+                  </button>
                 </div>
-
-                {/* X Axis Title and Y1 Axis Title */}
-                <div className="col-12 col-md-3 mb-3">
-                  <div className="mb-2">
-                    <label>X Axis Title:</label>
-                    <input
-                      type="text"
-                      value={xTitle}
-                      onChange={(e) => setXTitle(e.target.value)}
-                      className="form-control"
-                    />
-                  </div>
-                  <div className="mb-2">
-                    <label>Y1 Axis Title:</label>
-                    <input
-                      type="text"
-                      value={y1Title}
-                      onChange={(e) => setY1Title(e.target.value)}
-                      className="form-control"
-                    />
-                  </div>
-                </div>
-
-                {/* Y2 Axis Title and Y1 Axis Position */}
-                <div className="col-12 col-md-3 mb-3">
-                  <div className="mb-2">
-                    <label>Y2 Axis Title:</label>
-                    <input
-                      type="text"
-                      value={y2Title}
-                      onChange={(e) => setY2Title(e.target.value)}
-                      className="form-control"
-                    />
-                  </div>
-                  <div className="mb-2">
-                    <label>Y1 Axis Position:</label>
-                    <select
-                      value={y1Position}
-                      onChange={(e) => setY1Position(e.target.value)}
-                      className="form-select"
-                    >
-                      <option value="left">Left</option>
-                      <option value="right">Right</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Y2 Axis Position and Graph Title */}
-                <div className="col-12 col-md-3 mb-3">
-                  <div className="mb-2">
-                    <label>Y2 Axis Position:</label>
-                    <select
-                      value={y2Position}
-                      onChange={(e) => setY2Position(e.target.value)}
-                      className="form-select"
-                    >
-                      <option value="left">Left</option>
-                      <option value="right">Right</option>
-                    </select>
-                  </div>
-                  <div className="mb-2">
-                    <label>Graph Title:</label>
-                    <input
-                      type="text"
-                      value={graphTitle}
-                      onChange={(e) => setGraphTitle(e.target.value)}
-                      className="form-control"
-                    />
-                  </div>
+                <div className="modal-body">
+                  <div>{renderGraph(graphType)}</div>
                 </div>
               </div>
             </div>
@@ -679,6 +629,141 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
                   onClick={handleGenerateGraph}
                 >
                   Generate
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showGraphSettings && (
+        <div className="modal show d-block">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content bg-white rounded p-2">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  <FontAwesomeIcon className="mx-2" icon={faChartLine} />{" "}
+                  Generate <span className="text-green">Graph</span>{" "}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  aria-label="Close"
+                  onClick={() => {
+                    setGraphSettingsVisiblity(false);
+                  }}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <p>
+                  Select the <span className="text-green">parameters</span>
+                </p>
+
+                <div className="row">
+                  <div className="col-6">
+                    <label className="me-2">Show Legend:</label>
+                    <select
+                      value={showLegend ? "true" : "false"} // Display 'true' or 'false' based on the showLegend state
+                      onChange={handleShowLegendChange} // Update the state with boolean value
+                      className="form-select"
+                    >
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+                  </div>
+                  <div className="col-6">
+                    <label>Legend Position:</label>
+                    <select
+                      value={legendPosition}
+                      onChange={(e) => setLegendPosition(e.target.value)}
+                      className="form-select btn-menu"
+                    >
+                      <option value="top">Top</option>
+                      <option value="left">Left</option>
+                      <option value="right">Right</option>
+                      <option value="bottom">Bottom</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="row">
+                  {/* X Axis Title and Y1 Axis Title */}
+
+                  <div className="col-6">
+                    <label>X Axis Title:</label>
+                    <input
+                      type="text"
+                      value={xTitle}
+                      onChange={(e) => setXTitle(e.target.value)}
+                      className="form-control"
+                    />
+                  </div>
+                  <div className="col-6">
+                    <label>Y1 Axis Title:</label>
+                    <input
+                      type="text"
+                      value={y1Title}
+                      onChange={(e) => setY1Title(e.target.value)}
+                      className="form-control"
+                    />
+                  </div>
+                </div>
+                <div className="row">
+                  {/* Y2 Axis Title and Y1 Axis Position */}
+                  <div className="col-6">
+                    <label>Y2 Axis Title:</label>
+                    <input
+                      type="text"
+                      value={y2Title}
+                      onChange={(e) => setY2Title(e.target.value)}
+                      className="form-control"
+                    />
+                  </div>
+                  <div className="col-6">
+                    <label>Y1 Axis Position:</label>
+                    <select
+                      value={y1Position}
+                      onChange={(e) => setY1Position(e.target.value)}
+                      className="form-select"
+                    >
+                      <option value="left">Left</option>
+                      <option value="right">Right</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="row">
+                  {/* Y2 Axis Position and Graph Title */}
+
+                  <div className="col-6">
+                    <label>Y2 Axis Position:</label>
+                    <select
+                      value={y2Position}
+                      onChange={(e) => setY2Position(e.target.value)}
+                      className="form-select"
+                    >
+                      <option value="left">Left</option>
+                      <option value="right">Right</option>
+                    </select>
+                  </div>
+                  <div className="col-6">
+                    <label>Graph Title:</label>
+                    <input
+                      type="text"
+                      value={graphTitle}
+                      onChange={(e) => setGraphTitle(e.target.value)}
+                      className="form-control"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  className={`${
+                    loading ? "btn-green-disabled" : "btn-green"
+                  } p-1 w-25 rounded`}
+                  onClick={() => {
+                    setGraphSettingsVisiblity(false);
+                  }}
+                >
+                  Close
                 </button>
               </div>
             </div>

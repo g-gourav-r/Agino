@@ -57,11 +57,98 @@ function NotePadMainContent({ setRefresh, noteID }) {
   const [title, setTitle] = useState("");
   const [notesData, setNotesData] = useState({});
   const [loading, setLoading] = useState(false);
+  const [showEmailModal, setEmailModal] = useState(true);
+  const [sendingMail, setSendingMail] = useState(false);
+  const [emailData, setEmailData] = useState({
+    subject: "",
+    to: "",
+    body: "",
+  });
 
   const saveNotesAPI = createApiCall("api/notes", POST);
 
   const appData = JSON.parse(localStorage.getItem("appData"));
   const token = appData?.token;
+
+  const handleSubmit = async () => {
+    try {
+      if (
+        !emailData.to ||
+        !/^[\w.%+-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/.test(emailData.to)
+      ) {
+        toast.error("Please enter a valid email address.");
+        return;
+      }
+
+      if (!emailData.subject) {
+        toast.error("Subject is required.");
+        return;
+      }
+
+      if (!emailData.body) {
+        toast.error("Body cannot be empty.");
+        return;
+      }
+
+      const content = editor
+        .getHTML()
+        .replace(/<table/g, '<table class="table-pdf"');
+      const tempContainer = document.createElement("div");
+      tempContainer.innerHTML = content;
+      document.body.appendChild(tempContainer);
+
+      const options = {
+        margin: 1,
+        filename: `${title}.pdf`,
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: true,
+        },
+        jsPDF: {
+          unit: "in",
+          format: "letter",
+          orientation: "portrait",
+        },
+      };
+
+      const pdfBlob = await html2pdf()
+        .from(tempContainer)
+        .set(options)
+        .output("blob");
+
+      document.body.removeChild(tempContainer);
+
+      setSendingMail(true);
+
+      const emailAPI = createApiCall("sendmail", POST);
+
+      const formData = new FormData();
+      formData.append("file", pdfBlob, `${title}.pdf`);
+      formData.append("to", emailData.to);
+      formData.append("subject", emailData.subject);
+      formData.append("body", emailData.body);
+
+      console.log(formData);
+
+      // Send the API request
+      await emailAPI({
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      toast.success("Email sent successfully!");
+      setSendingMail(false);
+      setEmailModal(false);
+    } catch (error) {
+      console.error("Error sending email:", error);
+      toast.error("Failed to send email. Please try again.");
+      setSendingMail(false);
+      setEmailModal(false);
+    }
+  };
 
   useEffect(() => {
     if (!noteID) return;
@@ -333,7 +420,10 @@ function NotePadMainContent({ setRefresh, noteID }) {
   const handleShare = () => {
     if (title.trim().length < 1) {
       toast.error("A title is needed before sharing.", { autoClose: 2000 });
+      return;
     }
+    handleSave();
+    setEmailModal(true);
   };
 
   return (
@@ -630,6 +720,96 @@ function NotePadMainContent({ setRefresh, noteID }) {
             </div>
           </div>
           <EditorContent editor={editor} />
+          {showEmailModal && (
+            <div className="modal show d-block">
+              <div className="modal-dialog modal-dialog-centered">
+                <div className="modal-content bg-white rounded p-2">
+                  <div className="modal-header">
+                    <h5 className="modal-title">
+                      Share via <span className="text-green">Email</span>
+                    </h5>
+                    <button
+                      type="button"
+                      className="btn-close"
+                      aria-label="Close"
+                      onClick={() => setEmailModal(false)}
+                    ></button>
+                  </div>
+                  <div className="modal-body">
+                    <form>
+                      {/* To Field */}
+                      <div className="mb-3">
+                        <label htmlFor="emailTo" className="form-label">
+                          To
+                        </label>
+                        <input
+                          type="email"
+                          className="form-control"
+                          id="emailTo"
+                          value={emailData.to}
+                          onChange={(e) =>
+                            setEmailData({ ...emailData, to: e.target.value })
+                          }
+                        />
+                      </div>
+
+                      {/* Subject Field */}
+                      <div className="mb-3">
+                        <label htmlFor="emailSubject" className="form-label">
+                          Subject
+                        </label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="emailSubject"
+                          value={emailData.subject}
+                          onChange={(e) =>
+                            setEmailData({
+                              ...emailData,
+                              subject: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+
+                      {/* Body Field */}
+                      <div className="mb-3">
+                        <label htmlFor="emailBody" className="form-label">
+                          Body
+                        </label>
+                        <textarea
+                          className="form-control"
+                          id="emailBody"
+                          rows="5"
+                          value={emailData.body}
+                          onChange={(e) =>
+                            setEmailData({ ...emailData, body: e.target.value })
+                          }
+                        ></textarea>
+                      </div>
+                    </form>
+                  </div>
+                  <div className="modal-footer">
+                    <button
+                      className={`${
+                        sendingMail ? "btn-green-disabled" : "btn-green"
+                      } p-1 w-25 rounded`}
+                      onClick={handleSubmit}
+                      disabled={sendingMail}
+                    >
+                      {sendingMail ? "Sending..." : "Send"}
+                    </button>
+                    <button
+                      className="btn btn-secondary p-1 w-25 rounded"
+                      onClick={() => setEmailModal(false)}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

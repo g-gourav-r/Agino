@@ -86,12 +86,6 @@ function ChatMainContent({ selectedChatId }) {
     localStorage.setItem("appData", JSON.stringify(appData));
   };
 
-  useEffect(() => {
-    if (chat) {
-      handleNewMessage(chat);
-    }
-  }, [chat]);
-
   // Fetch chat history
   useEffect(() => {
     let urlParams = {};
@@ -253,12 +247,10 @@ function ChatMainContent({ selectedChatId }) {
                         onChange={(e) => {
                           const selectedOption =
                             e.target.options[e.target.selectedIndex];
-                          setDataSource(
-                            selectedOption.getAttribute("data-key")
-                          );
-                          setCurrentDataBase(
-                            selectedOption.getAttribute("data-key")
-                          );
+                          const newDataSource =
+                            selectedOption.getAttribute("data-key");
+                          setDataSource(newDataSource);
+                          setCurrentDataBase(newDataSource);
                         }}
                       >
                         <option value="" disabled>
@@ -268,7 +260,7 @@ function ChatMainContent({ selectedChatId }) {
                           <option
                             key={index}
                             data-key={dataSource.database}
-                            value={dataSource.aliasName}
+                            value={dataSource.database}
                           >
                             {dataSource.aliasName}
                           </option>
@@ -408,7 +400,7 @@ function ChatMainContent({ selectedChatId }) {
                                                 } rounded w-100 p-2 d-flex align-items-center justify-content-center`}
                                                 onClick={() => {
                                                   setChat(item);
-                                                  handleNewMessage(item);
+                                                  handleNewMessage();
                                                 }}
                                               >
                                                 {item}

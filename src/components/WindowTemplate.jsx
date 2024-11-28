@@ -65,7 +65,7 @@ function WindowTemplate({ currentPage, sideBar, mainContent }) {
             <ul className="navbar-nav mx-auto mb-2 mb-lg-0">
               <li className="nav-item">
                 <a
-                  className={`px-2 nav-link ${
+                  className={`px-2 nav-link user-select-none ${
                     currentPage === "chat" ? "active" : ""
                   }`}
                   aria-current="page"
@@ -76,7 +76,7 @@ function WindowTemplate({ currentPage, sideBar, mainContent }) {
               </li>
               <li className="nav-item">
                 <a
-                  className="px-2 nav-link disabled"
+                  className="px-2 nav-link disabled user-select-none"
                   href="#"
                   onClick={(e) => e.preventDefault()}
                 >
@@ -85,7 +85,7 @@ function WindowTemplate({ currentPage, sideBar, mainContent }) {
               </li>
               <li className="nav-item">
                 <a
-                  className="px-2 nav-link disabled"
+                  className="px-2 nav-link disabled user-select-none"
                   href="#"
                   onClick={(e) => e.preventDefault()}
                 >
@@ -94,7 +94,7 @@ function WindowTemplate({ currentPage, sideBar, mainContent }) {
               </li>
               <li className="nav-item">
                 <a
-                  className={`px-2 nav-link ${
+                  className={`px-2 nav-link user-select-none ${
                     currentPage === "notepad" ? "active" : ""
                   }`}
                   aria-current="page"
@@ -105,7 +105,7 @@ function WindowTemplate({ currentPage, sideBar, mainContent }) {
               </li>
               <li className="nav-item">
                 <a
-                  className={`px-2 nav-link ${
+                  className={`px-2 nav-link user-select-none${
                     currentPage === "data-source" ? "active" : ""
                   }`}
                   onClick={() => navigate("/datasource")}
