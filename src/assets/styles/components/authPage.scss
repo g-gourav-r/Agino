@@ -1,0 +1,40 @@
+@use "../mixins" as *;
+@use "../_variables" as *;
+.authPageWrapper {
+  background-image: url("/images/background.png");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: left center;
+
+  h1 {
+    font-family: $font-primary;
+    font-size: 100px;
+    color: rgba($black, 0.7);
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+  }
+  .login-card {
+    backdrop-filter: blur(2px);
+  }
+}
+.icon-width {
+  width: 1.5rem; /* Set the desired width */
+  text-align: center; /* Align the icon centrally */
+  background-color: transparent;
+}
+
+.input-group input {
+  background-color: transparent;
+}
+.input-group input:focus {
+  background-color: transparent;
+  box-shadow: none; /* Ensure no shadow appears on focus */
+  outline: none;
+}
+.input-group-text {
+  background-color: transparent !important;
+}
+/* Hide the default show password icon */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-webkit-contacts-auto-fill-button {
+  display: none;
+}
