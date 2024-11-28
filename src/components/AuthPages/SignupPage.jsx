@@ -102,7 +102,7 @@ function SignupPage() {
         <div className="col-md-6 d-none d-md-flex align-items-center justify-content-center">
           <h1>Agino</h1>
         </div>
-        <div className="col-md-6 col-12 row d-flex align-items-center justify-content-center">
+        <div className="col-md-6 col-12 row g-0 d-flex align-items-center justify-content-center">
           <div className="col-10 login-card p-5 border rounded">
             <h3 className="text-center">Unleash the Power of Your Data</h3>
             <p className="mb-4 text-center text-green">Signup to Agino</p>
