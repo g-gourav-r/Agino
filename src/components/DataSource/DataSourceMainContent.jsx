@@ -349,6 +349,16 @@ function DataSourceMainContent({ setRefresh }) {
       )}
       {showFileModal && (
         <>
+          <div
+            className="modal-backdrop opacity-50 rounded"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+            }}
+          ></div>
           <div className="modal show d-block">
             <div className="modal-dialog modal-dialog-centered">
               <div className="modal-content bg-white rounded p-2">
@@ -401,7 +411,17 @@ function DataSourceMainContent({ setRefresh }) {
       )}
       {showComingSoon && (
         <>
-          <div className="modal show d-block">
+          <div
+            className="modal-backdrop opacity-50 rounded"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+            }}
+          ></div>
+          <div className="modal show d-block" tabIndex="-1">
             <div className="modal-dialog modal-dialog-centered">
               <div className="modal-content bg-white rounded p-2">
                 <div className="modal-header">
@@ -428,80 +448,94 @@ function DataSourceMainContent({ setRefresh }) {
         </>
       )}
       {showConfigModal && (
-        <div className="modal show d-block">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content bg-white rounded p-2">
-              <div className="modal-header">
-                <h5 className="modal-title">
-                  <span className="text-green">{selectedConfig?.dbtype}</span>{" "}
-                  Configuration
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  aria-label="Close"
-                  onClick={() => {
-                    setShowConfigModal(false);
-                    setReadOnlyFields(false);
-                  }} // Close modal and reset fields
-                ></button>
-              </div>
-              <div className="modal-body">
-                <p>Configuration fields:</p>
-                <form>
-                  {selectedConfig?.config.map((configField, index) => (
-                    <input
-                      type="text"
-                      key={index}
-                      placeholder={configField}
-                      className="form-control mb-2"
-                      value={configValues[configField] || ""}
-                      onChange={(e) => handleInputChange(configField, e)}
-                      readOnly={readOnlyFields}
-                    />
-                  ))}
-                </form>
-                <div className="error-msgs d-flex flex-column">
-                  <small
-                    className={`${fieldsFilled ? "invisible" : "text-red"}`}
-                  >
-                    {" "}
-                    All the fields are requried
-                  </small>{" "}
-                  <small
-                    className={`${connectionFailed ? "text-red" : "invisible"}`}
-                  >
-                    {" "}
-                    Connection failed: Please check the entered details.{" "}
-                  </small>
+        <>
+          <div
+            className="modal-backdrop opacity-50 rounded"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+            }}
+          ></div>
+          <div className="modal show d-block" tabIndex="-1">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content bg-white rounded p-2">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    <span className="text-green">{selectedConfig?.dbtype}</span>{" "}
+                    Configuration
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    aria-label="Close"
+                    onClick={() => {
+                      setShowConfigModal(false);
+                      setReadOnlyFields(false);
+                    }} // Close modal and reset fields
+                  ></button>
                 </div>
-              </div>
+                <div className="modal-body">
+                  <p>Configuration fields:</p>
+                  <form>
+                    {selectedConfig?.config.map((configField, index) => (
+                      <input
+                        type="text"
+                        key={index}
+                        placeholder={configField}
+                        className="form-control mb-2"
+                        value={configValues[configField] || ""}
+                        onChange={(e) => handleInputChange(configField, e)}
+                        readOnly={readOnlyFields}
+                      />
+                    ))}
+                  </form>
+                  <div className="error-msgs d-flex flex-column">
+                    <small
+                      className={`${fieldsFilled ? "invisible" : "text-red"}`}
+                    >
+                      {" "}
+                      All the fields are requried
+                    </small>{" "}
+                    <small
+                      className={`${
+                        connectionFailed ? "text-red" : "invisible"
+                      }`}
+                    >
+                      {" "}
+                      Connection failed: Please check the entered details.{" "}
+                    </small>
+                  </div>
+                </div>
 
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  onClick={handleTestConfig}
-                  className={`btn-green rounded p-1 px-2 ${
-                    checkingDB || readOnlyFields ? "btn-green-disabled" : ""
-                  }`}
-                  disabled={checkingDB}
-                >
-                  Test Config
-                </button>
-                <button
-                  className={`${
-                    readOnlyFields ? "btn-green" : "btn-green-disabled"
-                  } ${
-                    connectingToDB ? "btn-green-disabled" : "btn-green"
-                  } p-1 px-2 rounded`}
-                  onClick={handleConnectDB}
-                >
-                  Connect
-                </button>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    onClick={handleTestConfig}
+                    className={`btn-green rounded p-1 px-2 ${
+                      checkingDB || readOnlyFields ? "btn-green-disabled" : ""
+                    }`}
+                    disabled={checkingDB}
+                  >
+                    Test Config
+                  </button>
+                  <button
+                    className={`${
+                      readOnlyFields ? "btn-green" : "btn-green-disabled"
+                    } ${
+                      connectingToDB ? "btn-green-disabled" : "btn-green"
+                    } p-1 px-2 rounded`}
+                    onClick={handleConnectDB}
+                  >
+                    Connect
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

@@ -531,244 +531,268 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
         </>
       )}
       {showGraphModal && (
-        <div className="modal show d-block">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content bg-white rounded p-2">
-              <div className="modal-header">
-                <h5 className="modal-title">
-                  <FontAwesomeIcon className="mx-2" icon={faChartLine} />{" "}
-                  Generate <span className="text-green">Graph</span>{" "}
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  aria-label="Close"
-                  onClick={() => {
-                    setGraphModalVisiblity(false);
-                  }}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <p>
-                  Select the <span className="text-green">parameters</span>
-                </p>
-                <Line data={sampleData} options={sampleOptions} />
-                <div className="row p-2 border rounded d-flex flex-row justify-content-between">
-                  {/* X-Axis Dropdown (on the left side) */}
-                  <div className="d-flex justify-content-between align-items-center p-2">
-                    <label htmlFor="x-axis">X parameter</label>
-                    <div className="">
-                      <select
-                        name="x-axis"
-                        id="x-axis"
-                        onChange={(e) => setSelectedX(e.target.value)}
-                        value={selectedX}
-                        className="btn-menu rounded"
-                      >
-                        <option value="" disabled>
-                          Select a parameter
-                        </option>
-                        {headers.map((header, index) => (
-                          <option key={index} value={header}>
-                            {header}
+        <>
+          <div
+            className="modal-backdrop opacity-50 rounded"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+            }}
+          ></div>
+          <div className="modal show d-block" tabIndex="-1">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content bg-white rounded p-2">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    <FontAwesomeIcon className="mx-2" icon={faChartLine} />{" "}
+                    Generate <span className="text-green">Graph</span>{" "}
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    aria-label="Close"
+                    onClick={() => {
+                      setGraphModalVisiblity(false);
+                    }}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <p>
+                    Select the <span className="text-green">parameters</span>
+                  </p>
+                  <Line data={sampleData} options={sampleOptions} />
+                  <div className="row p-2 border rounded d-flex flex-row justify-content-between">
+                    {/* X-Axis Dropdown (on the left side) */}
+                    <div className="d-flex justify-content-between align-items-center p-2">
+                      <label htmlFor="x-axis">X parameter</label>
+                      <div className="">
+                        <select
+                          name="x-axis"
+                          id="x-axis"
+                          onChange={(e) => setSelectedX(e.target.value)}
+                          value={selectedX}
+                          className="btn-menu rounded"
+                        >
+                          <option value="" disabled>
+                            Select a parameter
                           </option>
-                        ))}
-                      </select>
+                          {headers.map((header, index) => (
+                            <option key={index} value={header}>
+                              {header}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Y-Axis Dropdown (on the right side) */}
-                  <div className="d-flex justify-content-between align-items-center p-2">
-                    <label htmlFor="y-axis">Y1 parameter</label>
-                    <div>
-                      <select
-                        name="y-axis"
-                        id="y-axis"
-                        onChange={(e) => setSelectedY1(e.target.value)}
-                        value={selectedY1}
-                        className="ms-2 btn-menu rounded"
-                      >
-                        <option value="" disabled>
-                          Select a parameter
-                        </option>
-                        {headers.map((header, index) => (
-                          <option key={index} value={header}>
-                            {header}
+                    {/* Y-Axis Dropdown (on the right side) */}
+                    <div className="d-flex justify-content-between align-items-center p-2">
+                      <label htmlFor="y-axis">Y1 parameter</label>
+                      <div>
+                        <select
+                          name="y-axis"
+                          id="y-axis"
+                          onChange={(e) => setSelectedY1(e.target.value)}
+                          value={selectedY1}
+                          className="ms-2 btn-menu rounded"
+                        >
+                          <option value="" disabled>
+                            Select a parameter
                           </option>
-                        ))}
-                      </select>
+                          {headers.map((header, index) => (
+                            <option key={index} value={header}>
+                              {header}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
-                  </div>
-                  {/* Y2 parameter */}
-                  <div className="d-flex justify-content-between align-items-center p-2">
-                    <label htmlFor="y-axis">Y2 Parameter</label>
-                    <div>
-                      <select
-                        name="y-axis"
-                        id="y-axis"
-                        onChange={(e) => setSelectedY2(e.target.value)}
-                        value={selectedY2}
-                        className="btn-menu rounded"
-                      >
-                        <option value="">Select a parameter</option>
-                        {headers.map((header, index) => (
-                          <option key={index} value={header}>
-                            {header}
-                          </option>
-                        ))}
-                      </select>
+                    {/* Y2 parameter */}
+                    <div className="d-flex justify-content-between align-items-center p-2">
+                      <label htmlFor="y-axis">Y2 Parameter</label>
+                      <div>
+                        <select
+                          name="y-axis"
+                          id="y-axis"
+                          onChange={(e) => setSelectedY2(e.target.value)}
+                          value={selectedY2}
+                          className="btn-menu rounded"
+                        >
+                          <option value="">Select a parameter</option>
+                          {headers.map((header, index) => (
+                            <option key={index} value={header}>
+                              {header}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              <div className="modal-footer">
-                <button
-                  className={`${
-                    loading ? "btn-green-disabled" : "btn-green"
-                  } p-1 w-25 rounded`}
-                  onClick={handleGenerateGraph}
-                >
-                  Generate
-                </button>
+                <div className="modal-footer">
+                  <button
+                    className={`${
+                      loading ? "btn-green-disabled" : "btn-green"
+                    } p-1 w-25 rounded`}
+                    onClick={handleGenerateGraph}
+                  >
+                    Generate
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
       {showGraphSettings && (
-        <div className="modal show d-block">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content bg-white rounded p-2">
-              <div className="modal-header">
-                <h5 className="modal-title">
-                  <FontAwesomeIcon className="mx-2" icon={faChartLine} />{" "}
-                  Generate <span className="text-green">Graph</span>{" "}
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  aria-label="Close"
-                  onClick={() => {
-                    setGraphSettingsVisiblity(false);
-                  }}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <p>
-                  Select the <span className="text-green">parameters</span>
-                </p>
+        <>
+          <div
+            className="modal-backdrop opacity-50 rounded"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+            }}
+          ></div>
+          <div className="modal show d-block">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content bg-white rounded p-2">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    <FontAwesomeIcon className="mx-2" icon={faChartLine} />{" "}
+                    Generate <span className="text-green">Graph</span>{" "}
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    aria-label="Close"
+                    onClick={() => {
+                      setGraphSettingsVisiblity(false);
+                    }}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <p>
+                    Select the <span className="text-green">parameters</span>
+                  </p>
 
-                <div className="row">
-                  <div className="col-6">
-                    <label className="me-2">Show Legend:</label>
-                    <select
-                      value={showLegend ? "true" : "false"} // Display 'true' or 'false' based on the showLegend state
-                      onChange={handleShowLegendChange} // Update the state with boolean value
-                      className="form-select"
-                    >
-                      <option value="true">Yes</option>
-                      <option value="false">No</option>
-                    </select>
+                  <div className="row">
+                    <div className="col-6">
+                      <label className="me-2">Show Legend:</label>
+                      <select
+                        value={showLegend ? "true" : "false"} // Display 'true' or 'false' based on the showLegend state
+                        onChange={handleShowLegendChange} // Update the state with boolean value
+                        className="form-select"
+                      >
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                      </select>
+                    </div>
+                    <div className="col-6">
+                      <label>Legend Position:</label>
+                      <select
+                        value={legendPosition}
+                        onChange={(e) => setLegendPosition(e.target.value)}
+                        className="form-select btn-menu"
+                      >
+                        <option value="top">Top</option>
+                        <option value="left">Left</option>
+                        <option value="right">Right</option>
+                        <option value="bottom">Bottom</option>
+                      </select>
+                    </div>
                   </div>
-                  <div className="col-6">
-                    <label>Legend Position:</label>
-                    <select
-                      value={legendPosition}
-                      onChange={(e) => setLegendPosition(e.target.value)}
-                      className="form-select btn-menu"
-                    >
-                      <option value="top">Top</option>
-                      <option value="left">Left</option>
-                      <option value="right">Right</option>
-                      <option value="bottom">Bottom</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="row">
-                  {/* X Axis Title and Y1 Axis Title */}
+                  <div className="row">
+                    {/* X Axis Title and Y1 Axis Title */}
 
-                  <div className="col-6">
-                    <label>X Axis Title:</label>
-                    <input
-                      type="text"
-                      value={xTitle}
-                      onChange={(e) => setXTitle(e.target.value)}
-                      className="form-control"
-                    />
+                    <div className="col-6">
+                      <label>X Axis Title:</label>
+                      <input
+                        type="text"
+                        value={xTitle}
+                        onChange={(e) => setXTitle(e.target.value)}
+                        className="form-control"
+                      />
+                    </div>
+                    <div className="col-6">
+                      <label>Y1 Axis Title:</label>
+                      <input
+                        type="text"
+                        value={y1Title}
+                        onChange={(e) => setY1Title(e.target.value)}
+                        className="form-control"
+                      />
+                    </div>
                   </div>
-                  <div className="col-6">
-                    <label>Y1 Axis Title:</label>
-                    <input
-                      type="text"
-                      value={y1Title}
-                      onChange={(e) => setY1Title(e.target.value)}
-                      className="form-control"
-                    />
+                  <div className="row">
+                    {/* Y2 Axis Title and Y1 Axis Position */}
+                    <div className="col-6">
+                      <label>Y2 Axis Title:</label>
+                      <input
+                        type="text"
+                        value={y2Title}
+                        onChange={(e) => setY2Title(e.target.value)}
+                        className="form-control"
+                      />
+                    </div>
+                    <div className="col-6">
+                      <label>Y1 Axis Position:</label>
+                      <select
+                        value={y1Position}
+                        onChange={(e) => setY1Position(e.target.value)}
+                        className="form-select"
+                      >
+                        <option value="left">Left</option>
+                        <option value="right">Right</option>
+                      </select>
+                    </div>
                   </div>
-                </div>
-                <div className="row">
-                  {/* Y2 Axis Title and Y1 Axis Position */}
-                  <div className="col-6">
-                    <label>Y2 Axis Title:</label>
-                    <input
-                      type="text"
-                      value={y2Title}
-                      onChange={(e) => setY2Title(e.target.value)}
-                      className="form-control"
-                    />
-                  </div>
-                  <div className="col-6">
-                    <label>Y1 Axis Position:</label>
-                    <select
-                      value={y1Position}
-                      onChange={(e) => setY1Position(e.target.value)}
-                      className="form-select"
-                    >
-                      <option value="left">Left</option>
-                      <option value="right">Right</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="row">
-                  {/* Y2 Axis Position and Graph Title */}
+                  <div className="row">
+                    {/* Y2 Axis Position and Graph Title */}
 
-                  <div className="col-6">
-                    <label>Y2 Axis Position:</label>
-                    <select
-                      value={y2Position}
-                      onChange={(e) => setY2Position(e.target.value)}
-                      className="form-select"
-                    >
-                      <option value="left">Left</option>
-                      <option value="right">Right</option>
-                    </select>
-                  </div>
-                  <div className="col-6">
-                    <label>Graph Title:</label>
-                    <input
-                      type="text"
-                      value={graphTitle}
-                      onChange={(e) => setGraphTitle(e.target.value)}
-                      className="form-control"
-                    />
+                    <div className="col-6">
+                      <label>Y2 Axis Position:</label>
+                      <select
+                        value={y2Position}
+                        onChange={(e) => setY2Position(e.target.value)}
+                        className="form-select"
+                      >
+                        <option value="left">Left</option>
+                        <option value="right">Right</option>
+                      </select>
+                    </div>
+                    <div className="col-6">
+                      <label>Graph Title:</label>
+                      <input
+                        type="text"
+                        value={graphTitle}
+                        onChange={(e) => setGraphTitle(e.target.value)}
+                        className="form-control"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="modal-footer">
-                <button
-                  className={`${
-                    loading ? "btn-green-disabled" : "btn-green"
-                  } p-1 w-25 rounded`}
-                  onClick={() => {
-                    setGraphSettingsVisiblity(false);
-                  }}
-                >
-                  Close
-                </button>
+                <div className="modal-footer">
+                  <button
+                    className={`${
+                      loading ? "btn-green-disabled" : "btn-green"
+                    } p-1 w-25 rounded`}
+                    onClick={() => {
+                      setGraphSettingsVisiblity(false);
+                    }}
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </>
   );
