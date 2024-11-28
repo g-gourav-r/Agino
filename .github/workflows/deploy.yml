@@ -49,7 +49,7 @@ jobs:
       - name: Upload to S3
         uses: jakejarvis/s3-sync-action@master
         with:
-          args: --acl public-read --no-acl
+          args: --no-acl
         env:
           SOURCE_DIR: dist/
           AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
