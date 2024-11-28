@@ -15,6 +15,7 @@ function AppRouter() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SingupPage />} />
         <Route path="/" element={<LoginPage />} />
+
         {/* Protected Routes */}
         <Route
           path="/home"
