@@ -2,9 +2,9 @@ name: Upload Website
 
 on:
   push:
-    branches: [ "V2" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "V2" ]
+    branches: ["main"]
 
 jobs:
   build:
@@ -17,7 +17,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '20'  # or '18' as per your requirement
+          node-version: "20" # or '18' as per your requirement
 
       - name: Clear npm cache
         run: npm cache clean --force
