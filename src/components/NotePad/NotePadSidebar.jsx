@@ -58,6 +58,9 @@ function NotePadSidebar({ refreshNotesSideBar, setNoteID }) {
               key={note._id}
               id={note._id}
               className="w-100 rounded btn-outline border-bottom note-item p-1 mb-2"
+              data-bs-toggle="tooltip"
+              data-bs-placement="top"
+              title={`${note.title}`}
               onClick={() => setNoteID(note._id)}
             >
               <p className="p-0 m-0">{note.title}</p>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import createApiCall, { POST, GET } from "../../api/api.jsx";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -73,6 +73,7 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
   const [y2Position, setY2Position] = useState("right"); // Options: 'left', 'right'
   const [graphTitle, setGraphTitle] = useState("");
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const graphContainerRef = useRef(null);
 
   const appData = JSON.parse(localStorage.getItem("appData"));
   const token = appData?.token;
@@ -495,9 +496,18 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
             <div
               id="graph-container"
               className="p-1 d-flex align-items-center justify-content-center"
+              ref={graphContainerRef}
+              style={{
+                maxWidth: "800px",
+                width: "100%",
+                margin: "0 auto",
+              }}
             >
-              <div className="mt-4 w-100">{renderGraph(graphType)}</div>
-            </div>{" "}
+              <div className="mt-4 w-100" style={{ maxHeight: "400px" }}>
+                {renderGraph(graphType)}{" "}
+                {/* This function renders your chart */}
+              </div>
+            </div>
           </div>
           <div
             className={`modal fade ${isModalVisible ? "show d-block" : ""}`}
@@ -522,8 +532,15 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
                     Fullscreen
                   </button>
                 </div>
-                <div className="modal-body">
-                  <div>{renderGraph(graphType)}</div>
+                <div className="mx-auto modal-body w-100 h-100">
+                  <div
+                    style={{
+                      maxWidth: "100%", // Make the modal dialog take full width
+                      height: "80vh", // Make the modal dialog take full height
+                    }}
+                  >
+                    {renderGraph(graphType)}
+                  </div>
                 </div>
               </div>
             </div>

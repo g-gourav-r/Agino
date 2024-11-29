@@ -317,11 +317,13 @@ function NotePadMainContent({ setRefresh, noteID }) {
     tempContainer.innerHTML = content;
     document.body.appendChild(tempContainer);
 
+    console.log(document.body.appendChild(tempContainer));
+
     // Define html2pdf options
     const options = {
       margin: [0.5, 0.5, 1, 0.5], // top, right, bottom, left
       filename: title,
-      image: { type: "jpeg", quality: 0.98 },
+      image: { type: "jpeg", quality: 2 },
       html2canvas: {
         scale: 2,
         useCORS: true,
@@ -379,6 +381,7 @@ function NotePadMainContent({ setRefresh, noteID }) {
       document.body.removeChild(tempContainer);
     }
   };
+
   const handleSave = () => {
     if (title.trim().length < 1) {
       toast.error("Title is required to save your work.", { autoClose: 2000 });

@@ -51,7 +51,12 @@ function DataSourceSideBar({ refreshDataSourceSideBar }) {
                 className="btn-black-reverse m-1 rounded p-0 border"
                 key={source._id}
               >
-                <p className="text-truncate m-1 rounded">
+                <p
+                  className="text-truncate m-1 rounded"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="top"
+                  title={source.aliasName || source.database}
+                >
                   <FontAwesomeIcon className="mx-2" icon={faDatabase} />
                   {source.aliasName ? source.aliasName : source.database}
                 </p>

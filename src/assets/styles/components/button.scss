@@ -43,9 +43,7 @@
   );
 }
 .btn-black-reverse {
-  @include button(rgba($white, 0.1), $black, $black, $black, $black);
-  pointer-events: none; // Disable interactions (no hover effect)
-  // Apply opac
+  @include button(rgba($white, 0.1), $black, rgba($white, 0.1), $black, $black);
 }
 // Disabled button style for btn-green
 .btn-green-disabled {

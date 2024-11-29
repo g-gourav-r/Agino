@@ -72,6 +72,9 @@ function ChatSidebar({ setChatID }) {
                 setChatID(chat._id);
                 clearCurrentChatHistory();
               }}
+              data-bs-toggle="tooltip"
+              data-bs-placement="top"
+              title={`${chat.input}`}
             >
               <div
                 className="px-1 fs-8 text-truncate text-start"
