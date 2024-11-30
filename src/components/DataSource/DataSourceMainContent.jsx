@@ -295,7 +295,7 @@ function DataSourceMainContent({ setRefresh }) {
               <div className="mt-3 d-flex flex-wrap row">
                 <button
                   onClick={() => setShowComingSoon(true)}
-                  className="d-flex col-5 col-md-3 col-lg-2 align-items-center btn-black m-2 p-1 rounded"
+                  className="d-flex col-12 col-sm-5 col-md-3 col-lg-2 align-items-center btn-black m-2 p-1 rounded"
                 >
                   <FontAwesomeIcon icon={faShopify} className="mx-2 " />
                   Shopify
