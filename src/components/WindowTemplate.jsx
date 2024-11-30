@@ -159,20 +159,26 @@ function WindowTemplate({ currentPage, sideBar, mainContent }) {
 
         {/* Sidebar Toggle Button (Visible on Mobile) */}
         <button
-          className="btn-green d-lg-none position-absolute top-auto start-0 p-2 rounded-end"
+          className="d-lg-none position-absolute top-auto start-0  py-5"
           onClick={toggleSidebar}
           style={{
             top: "50%",
             transform: "translateY(-50%)",
             zIndex: 1050,
+            backgroundColor: "#28a745",
+            border: "none",
             width: "auto",
+            borderRadius: "0px 200px 200px 0px",
           }}
         >
-          {isSidebarOpen ? (
-            <FontAwesomeIcon icon={faArrowLeft} />
-          ) : (
-            <FontAwesomeIcon icon={faArrowRight} />
-          )}
+          <FontAwesomeIcon
+            icon={faArrowRight}
+            style={{
+              transition: "transform 0.3s ease-in-out", // Smooth rotation animation
+              transform: isSidebarOpen ? "rotate(180deg)" : "rotate(0deg)",
+              color: "white",
+            }}
+          />
         </button>
 
         {/* Main Content */}
