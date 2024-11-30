@@ -1,12 +1,19 @@
 import React, { useState, useRef, useEffect } from "react";
 import FeedbackModal from "./FeedbackModal/FeedbackModal";
 import { useNavigate } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowRight, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 
 function WindowTemplate({ currentPage, sideBar, mainContent }) {
   const navigate = useNavigate();
   const navbarRef = useRef(null);
   const [navbarHeight, setNavbarHeight] = useState(0);
   const [isFeedbackVisible, setFeedbackVisible] = useState(false);
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!isSidebarOpen);
+  };
 
   const openFeedback = () => {
     setFeedbackVisible(true);
@@ -118,9 +125,15 @@ function WindowTemplate({ currentPage, sideBar, mainContent }) {
         </div>
       </nav>
       <div className="row g-0 d-flex flex-grow-1 py-1">
+        {/* Sidebar */}
         <div
-          className="col-md-2 col-1 d-lg-flex d-none sideBar border rounded flex-column"
-          style={{ height: `calc(97vh - ${navbarHeight}px)` }}
+          className={`sideBar border rounded flex-column ${
+            isSidebarOpen ? "d-flex col-6" : "col-2 d-none d-lg-flex"
+          }`}
+          style={{
+            height: `calc(97vh - ${navbarHeight}px)`,
+            transition: "transform 0.3s ease",
+          }}
         >
           <div
             className="m-1 border rounded flex-grow-1"
@@ -144,8 +157,27 @@ function WindowTemplate({ currentPage, sideBar, mainContent }) {
           </div>
         </div>
 
+        {/* Sidebar Toggle Button (Visible on Mobile) */}
+        <button
+          className="btn-green d-lg-none position-absolute top-auto start-0 p-2 rounded-end"
+          onClick={toggleSidebar}
+          style={{
+            top: "50%",
+            transform: "translateY(-50%)",
+            zIndex: 1050,
+            width: "auto",
+          }}
+        >
+          {isSidebarOpen ? (
+            <FontAwesomeIcon icon={faArrowLeft} />
+          ) : (
+            <FontAwesomeIcon icon={faArrowRight} />
+          )}
+        </button>
+
+        {/* Main Content */}
         <div
-          className="col-lg-10 col-11 mainContent d-flex flex-grow-1"
+          className="col-lg-10 col-6 mainContent d-flex flex-grow-1"
           style={{ height: `calc(97vh - ${navbarHeight}px)` }}
         >
           <div
