@@ -230,7 +230,7 @@ function ChatMainContent({ selectedChatId }) {
           <>
             {/* Chat Header */}
             <div id="chat-header" className="chat-header">
-              <div className="bg-light m-2 p-2 border rounded d-flex align-items-center">
+              <div className="bg-light m-2 p-2 border rounded d-flex align-items-center flex-wrap">
                 {dataSources && dataSources.length > 0 ? (
                   !isHistoricChat ? (
                     <>

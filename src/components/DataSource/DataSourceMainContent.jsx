@@ -265,7 +265,7 @@ function DataSourceMainContent({ setRefresh }) {
                 {configurableDataSources.map((db) => (
                   <button
                     key={db._id}
-                    className="d-flex col-5 col-md-3 col-lg-2 align-items-center btn-black m-2 p-1 rounded"
+                    className="d-flex col-10 col-md-3 col-lg-2 align-items-center btn-black m-2 p-1 rounded"
                     onClick={() => {
                       setSelectedConfig({
                         config: db.config,
@@ -295,35 +295,35 @@ function DataSourceMainContent({ setRefresh }) {
               <div className="mt-3 d-flex flex-wrap row">
                 <button
                   onClick={() => setShowComingSoon(true)}
-                  className="d-flex col-12 col-sm-5 col-md-3 col-lg-2 align-items-center btn-black m-2 p-1 rounded"
+                  className="d-flex col-10 col-md-3 col-lg-2 align-items-center btn-black m-2 p-1 rounded"
                 >
                   <FontAwesomeIcon icon={faShopify} className="mx-2 " />
                   Shopify
                 </button>
                 <button
                   onClick={() => setShowComingSoon(true)}
-                  className="d-flex col-5 col-md-3 col-lg-2 align-items-center btn-black m-2 p-1 rounded"
+                  className="d-flex col-10 col-md-3 col-lg-2 align-items-center btn-black m-2 p-1 rounded"
                 >
                   <FontAwesomeIcon icon={faHubspot} className="mx-2 " />
                   HubSpot
                 </button>
                 <button
                   onClick={() => setShowComingSoon(true)}
-                  className="d-flex col-5 col-md-3 col-lg-2 align-items-center btn-black m-2 p-1 rounded"
+                  className="d-flex col-10 col-md-3 col-lg-2 align-items-center btn-black m-2 p-1 rounded"
                 >
                   <FontAwesomeIcon icon={faGoogle} className="mx-2 " />
                   Google Analytics
                 </button>
                 <button
                   onClick={() => setShowComingSoon(true)}
-                  className="d-flex col-5 col-md-3 col-lg-2 align-items-center btn-black m-2 p-1 rounded"
+                  className="d-flex col-10 col-md-3 col-lg-2 align-items-center btn-black m-2 p-1 rounded"
                 >
                   <FontAwesomeIcon icon={faSalesforce} className="mx-2 " />
                   SalesForce
                 </button>
                 <button
                   onClick={() => setShowComingSoon(true)}
-                  className="d-flex col-5 col-md-3 col-lg-2 align-items-center btn-black m-2 p-1 rounded"
+                  className="d-flex col-10 col-md-3 col-lg-2 align-items-center btn-black m-2 p-1 rounded"
                 >
                   <FontAwesomeIcon icon={faFacebook} className="mx-2 " />
                   Facebook Pixel
@@ -336,7 +336,7 @@ function DataSourceMainContent({ setRefresh }) {
               </h5>
               <div className="d-flex mt-3 flex-wrap row">
                 <button
-                  className="d-flex col-5 col-md-3 col-lg-2 align-items-center btn-black m-2 p-1 rounded"
+                  className="d-flex col-10 col-md-3 col-lg-2 align-items-center btn-black m-2 p-1 rounded"
                   onClick={() => setShowFileModal(true)}
                 >
                   <FontAwesomeIcon icon={faSheetPlastic} className="mx-2" />{" "}

@@ -48,8 +48,27 @@ function WindowTemplate({ currentPage, sideBar, mainContent }) {
     };
   }, []);
 
+  useEffect(() => {
+    const updateViewportHeight = () => {
+      document.documentElement.style.setProperty(
+        "--vh",
+        `${window.innerHeight * 0.01}px`
+      );
+    };
+
+    updateViewportHeight(); // Set on initial load
+    window.addEventListener("resize", updateViewportHeight); // Update on resize
+
+    return () => {
+      window.removeEventListener("resize", updateViewportHeight); // Cleanup
+    };
+  }, []);
+
   return (
-    <div className="container-fluid vh-100 vw-100 background-image p-2 d-flex flex-column">
+    <div
+      className="container-fluid vh-100 vw-100 background-image p-2 d-flex flex-column"
+      style={{ height: "calc(var(--vh, 1vh) * 100)" }}
+    >
       <nav
         id="navigation-bar"
         ref={navbarRef}
