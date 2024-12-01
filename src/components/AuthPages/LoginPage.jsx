@@ -28,9 +28,6 @@ function LoginPage() {
   };
 
   const handleSubmit = (e) => {
-    setLoading(true);
-    const loginToast = toast.loading("Logging in...");
-
     e.preventDefault();
     const form = e.currentTarget;
     const email = form.email.value;
@@ -46,6 +43,9 @@ function LoginPage() {
       toast.error("Password cannot be empty.", { autoClose: 3000 });
       return;
     }
+
+    setLoading(true);
+    const loginToast = toast.loading("Logging in...");
 
     const loginApiCall = createApiCall("login", POST);
     loginApiCall({
