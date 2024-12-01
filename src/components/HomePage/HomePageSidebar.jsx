@@ -31,12 +31,14 @@ function HomePageSidebar() {
   ];
 
   return (
-    <div className="sidebar p-4">
-      <h3 className="text-center text-green">New Features !</h3>
+    <div className="sidebar px-2">
+      <h5 className="text-center text-green py-2 border-bottom">
+        Upcoming Features !
+      </h5>
       {features.map((feature) => (
-        <div key={feature.id} className="feature-item mb-3">
-          <h5 className="text-green">{feature.name}</h5>
-          <p>{feature.description}</p>
+        <div key={feature.id} className="feature-item mb-3 pb-2 border-bottom">
+          <p className="text-green mb-0">{feature.name}</p>
+          <p className="mb-0">{feature.description}</p>
           <small>
             Status: <span className="text-green">{feature.status}</span>
           </small>
