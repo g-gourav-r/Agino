@@ -68,17 +68,86 @@ function NotePadMainContent({ setRefresh, noteID }) {
   });
 
   const saveNotesAPI = createApiCall("api/notes", POST);
+  const emailAPI = createApiCall("sendmail", POST);
 
   const appData = JSON.parse(localStorage.getItem("appData"));
   const token = appData?.token;
 
+  const generatePDF = async () => {
+    const contentHTML = editor
+      .getHTML()
+      .replace(/<table/g, '<table class="table-pdf"');
+
+    const tempContainer = document.createElement("div");
+    tempContainer.innerHTML = contentHTML;
+    document.body.appendChild(tempContainer);
+
+    const options = {
+      margin: [0.5, 0.5, 1, 0.5],
+      filename: title,
+      image: { type: "jpeg", quality: 2 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      },
+      jsPDF: {
+        unit: "in",
+        format: "letter",
+        orientation: "portrait",
+      },
+      pagebreak: { mode: "avoid-all" },
+    };
+
+    try {
+      const pdf = await html2pdf()
+        .from(tempContainer)
+        .set(options)
+        .toPdf()
+        .get("pdf");
+
+      const pageCount = pdf.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        pdf.setPage(i);
+
+        // Add thin border
+        pdf.setLineWidth(0.01);
+        pdf.rect(0.4, 0.4, 7.7, 10.2, "S");
+
+        // Add watermark
+        pdf.setFontSize(10);
+        pdf.setTextColor(150); // Light gray
+        pdf.text("Powered by", 7.8, 10.8, { align: "right" });
+
+        pdf.setTextColor(40, 167, 69); // Green
+        pdf.textWithLink("Agino", 8.2, 10.8, { url: "https://agino.tech" });
+      }
+
+      // Return the PDF as a buffer (Uint8Array)
+      const buffer = pdf.output("arraybuffer");
+      return buffer;
+    } catch (error) {
+      console.error("PDF generation error:", error);
+      toast.error("Failed to generate PDF");
+      throw error;
+    } finally {
+      document.body.removeChild(tempContainer);
+    }
+  };
+
   const handleSubmit = async () => {
     try {
-      if (
-        !emailData.to ||
-        !/^[\w.%+-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/.test(emailData.to)
-      ) {
-        toast.error("Please enter a valid email address.");
+      const emailList = emailData.to
+        .split(",")
+        .map((email) => email.trim())
+        .filter((email) => email.length > 0);
+
+      const isValidEmails = emailList.every((email) =>
+        /^[\w.%+-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/.test(email)
+      );
+
+      if (!isValidEmails) {
+        toast.error("Please enter valid email addresses.");
         return;
       }
 
@@ -92,46 +161,18 @@ function NotePadMainContent({ setRefresh, noteID }) {
         return;
       }
 
-      const content = editor
-        .getHTML()
-        .replace(/<table/g, '<table class="table-pdf"');
-      const tempContainer = document.createElement("div");
-      tempContainer.innerHTML = content;
-      document.body.appendChild(tempContainer);
-
-      const options = {
-        margin: 1,
-        filename: `${title}.pdf`,
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          logging: true,
-        },
-        jsPDF: {
-          unit: "in",
-          format: "letter",
-          orientation: "portrait",
-        },
-      };
-
-      const pdfBlob = await html2pdf()
-        .from(tempContainer)
-        .set(options)
-        .output("blob");
-
-      document.body.removeChild(tempContainer);
-
-      setSendingMail(true);
-
-      const emailAPI = createApiCall("sendmail", POST);
+      const pdfBuffer = await generatePDF();
 
       const formData = new FormData();
-      formData.append("file", pdfBlob, `${title}.pdf`); //Change to buffer
-      formData.append("to", emailData.to);
+      formData.append("to", emailList.join(","));
       formData.append("subject", emailData.subject);
-      formData.append("body", emailData.body);
+      formData.append("text", emailData.body);
 
-      console.log(formData);
+      const pdfBlob =
+        pdfBuffer instanceof Blob
+          ? pdfBuffer
+          : new Blob([pdfBuffer], { type: "application/pdf" });
+      formData.append("file", pdfBlob, `${title}.pdf`);
 
       // Send the API request
       await emailAPI({
@@ -298,87 +339,35 @@ function NotePadMainContent({ setRefresh, noteID }) {
   };
 
   const handleDownload = async () => {
-    handleSave();
-
     // Validate if title is provided
-    if (title.trim().length < 1) {
+    if (!title.trim()) {
       toast.error("Please provide a title before downloading.", {
         autoClose: 2000,
       });
       return;
     }
 
-    // Get the HTML content
-    const content = editor
-      .getHTML()
-      .replace(/<table/g, '<table class="table-pdf"');
-
-    const tempContainer = document.createElement("div");
-    tempContainer.innerHTML = content;
-    document.body.appendChild(tempContainer);
-
-    console.log(document.body.appendChild(tempContainer));
-
-    // Define html2pdf options
-    const options = {
-      margin: [0.5, 0.5, 1, 0.5], // top, right, bottom, left
-      filename: title,
-      image: { type: "jpeg", quality: 2 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-      },
-      jsPDF: {
-        unit: "in",
-        format: "letter",
-        orientation: "portrait",
-      },
-      pagebreak: { mode: "avoid-all" },
-    };
+    handleSave();
 
     try {
-      // Generate PDF with border and watermark
-      await html2pdf()
-        .from(tempContainer)
-        .set(options)
-        .toPdf()
-        .get("pdf")
-        .then((pdf) => {
-          // Add border to each page
-          const pageCount = pdf.internal.getNumberOfPages();
+      const pdfBuffer = await generatePDF();
 
-          for (let i = 1; i <= pageCount; i++) {
-            pdf.setPage(i);
+      const blob =
+        pdfBuffer instanceof Blob
+          ? pdfBuffer
+          : new Blob([pdfBuffer], { type: "application/pdf" });
 
-            // Add thin border
-            pdf.setLineWidth(0.01);
-            pdf.rect(0.4, 0.4, 7.7, 10.2, "S");
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `${title}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
-            // Add watermark/text
-            pdf.setFontSize(10);
-            pdf.setTextColor(150); // Light gray color for "Powered by"
-            pdf.text("Powered by", 7.8, 10.8, {
-              align: "right",
-              angle: 0, // Optional: rotate the text
-            });
-
-            pdf.setTextColor(40, 167, 69); // Green color for "Agino"
-            pdf.textWithLink("Agino", 8.2, 10.8, {
-              url: "https://agino.tech",
-              align: "right", // Align the text to the right
-            });
-          }
-
-          // Save the PDF
-          pdf.save(title);
-        });
+      URL.revokeObjectURL(link.href);
     } catch (error) {
-      console.error("PDF generation error:", error);
-      toast.error("Failed to generate PDF");
-    } finally {
-      // Clean up the temporary container
-      document.body.removeChild(tempContainer);
+      console.error("Download failed:", error);
+      toast.error("Failed to download PDF");
     }
   };
 
