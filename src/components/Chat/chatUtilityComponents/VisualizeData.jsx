@@ -34,6 +34,7 @@ import {
   ArcElement,
 } from "chart.js";
 import RotatingSquareLoader from "../../Loaders/RotatingSquare";
+import MutatingDotsLoader from "../../Loaders/MutatingDots.jsx";
 
 ChartJS.register(
   CategoryScale,
@@ -431,7 +432,7 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
         )}
       </div>
       {/* Buttons */}
-      <div className="visulize-data-btn-grp p-2 d-flex">
+      <div className="visulize-data-btn-grp p-2">
         <button
           className="btn-green p-1 rounded m-2 text-start"
           onClick={handleCopyTable}
@@ -444,7 +445,8 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
             setGraphModalVisiblity(true);
           }}
         >
-          <FontAwesomeIcon className="mx-2" icon={faChartLine} /> Generate Graph
+          <FontAwesomeIcon className="mx-2" icon={faChartLine} />{" "}
+          {showGraph ? "Regenerate" : "Generate"} Graph
         </button>
         {showGraph && (
           <>
@@ -481,7 +483,6 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
               onClick={() => setIsModalVisible(true)}
             >
               <FontAwesomeIcon className="mx-2" icon={faExpand} />
-              Full Screen
             </button>
           </>
         )}
@@ -561,105 +562,109 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
           ></div>
           <div className="modal show d-block" tabIndex="-1">
             <div className="modal-dialog modal-dialog-centered">
-              <div className="modal-content bg-white rounded p-2">
-                <div className="modal-header">
-                  <h5 className="modal-title">
-                    <FontAwesomeIcon className="mx-2" icon={faChartLine} />{" "}
-                    Generate <span className="text-green">Graph</span>{" "}
-                  </h5>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    aria-label="Close"
-                    onClick={() => {
-                      setGraphModalVisiblity(false);
-                    }}
-                  ></button>
-                </div>
-                <div className="modal-body">
-                  <p>
-                    Select the <span className="text-green">parameters</span>
-                  </p>
-                  <Line data={sampleData} options={sampleOptions} />
-                  <div className="row p-2 border rounded d-flex flex-row justify-content-between">
-                    {/* X-Axis Dropdown (on the left side) */}
-                    <div className="d-flex justify-content-between align-items-center p-2">
-                      <label htmlFor="x-axis">X parameter</label>
-                      <div className="">
-                        <select
-                          name="x-axis"
-                          id="x-axis"
-                          onChange={(e) => setSelectedX(e.target.value)}
-                          value={selectedX}
-                          className="btn-menu rounded"
-                        >
-                          <option value="" disabled>
-                            Select a parameter
-                          </option>
-                          {headers.map((header, index) => (
-                            <option key={index} value={header}>
-                              {header}
+              {loading ? (
+                <MutatingDotsLoader />
+              ) : (
+                <div className="modal-content bg-white rounded p-2">
+                  <div className="modal-header">
+                    <h5 className="modal-title">
+                      <FontAwesomeIcon className="mx-2" icon={faChartLine} />{" "}
+                      Generate <span className="text-green">Graph</span>{" "}
+                    </h5>
+                    <button
+                      type="button"
+                      className="btn-close"
+                      aria-label="Close"
+                      onClick={() => {
+                        setGraphModalVisiblity(false);
+                      }}
+                    ></button>
+                  </div>
+                  <div className="modal-body">
+                    <p>
+                      Select the <span className="text-green">parameters</span>
+                    </p>
+                    <Line data={sampleData} options={sampleOptions} />
+                    <div className="row p-2 border rounded d-flex flex-row justify-content-between">
+                      {/* X-Axis Dropdown (on the left side) */}
+                      <div className="d-flex justify-content-between align-items-center p-2">
+                        <label htmlFor="x-axis">X parameter</label>
+                        <div className="">
+                          <select
+                            name="x-axis"
+                            id="x-axis"
+                            onChange={(e) => setSelectedX(e.target.value)}
+                            value={selectedX}
+                            className="btn-menu rounded"
+                          >
+                            <option value="" disabled>
+                              Select a parameter
                             </option>
-                          ))}
-                        </select>
+                            {headers.map((header, index) => (
+                              <option key={index} value={header}>
+                                {header}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Y-Axis Dropdown (on the right side) */}
-                    <div className="d-flex justify-content-between align-items-center p-2">
-                      <label htmlFor="y-axis">Y1 parameter</label>
-                      <div>
-                        <select
-                          name="y-axis"
-                          id="y-axis"
-                          onChange={(e) => setSelectedY1(e.target.value)}
-                          value={selectedY1}
-                          className="ms-2 btn-menu rounded"
-                        >
-                          <option value="" disabled>
-                            Select a parameter
-                          </option>
-                          {headers.map((header, index) => (
-                            <option key={index} value={header}>
-                              {header}
+                      {/* Y-Axis Dropdown (on the right side) */}
+                      <div className="d-flex justify-content-between align-items-center p-2">
+                        <label htmlFor="y-axis">Y1 parameter</label>
+                        <div>
+                          <select
+                            name="y-axis"
+                            id="y-axis"
+                            onChange={(e) => setSelectedY1(e.target.value)}
+                            value={selectedY1}
+                            className="ms-2 btn-menu rounded"
+                          >
+                            <option value="" disabled>
+                              Select a parameter
                             </option>
-                          ))}
-                        </select>
+                            {headers.map((header, index) => (
+                              <option key={index} value={header}>
+                                {header}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
-                    </div>
-                    {/* Y2 parameter */}
-                    <div className="d-flex justify-content-between align-items-center p-2">
-                      <label htmlFor="y-axis">Y2 Parameter</label>
-                      <div>
-                        <select
-                          name="y-axis"
-                          id="y-axis"
-                          onChange={(e) => setSelectedY2(e.target.value)}
-                          value={selectedY2}
-                          className="btn-menu rounded"
-                        >
-                          <option value="">Select a parameter</option>
-                          {headers.map((header, index) => (
-                            <option key={index} value={header}>
-                              {header}
-                            </option>
-                          ))}
-                        </select>
+                      {/* Y2 parameter */}
+                      <div className="d-flex justify-content-between align-items-center p-2">
+                        <label htmlFor="y-axis">Y2 Parameter</label>
+                        <div>
+                          <select
+                            name="y-axis"
+                            id="y-axis"
+                            onChange={(e) => setSelectedY2(e.target.value)}
+                            value={selectedY2}
+                            className="btn-menu rounded"
+                          >
+                            <option value="">Select a parameter</option>
+                            {headers.map((header, index) => (
+                              <option key={index} value={header}>
+                                {header}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     </div>
                   </div>
+                  <div className="modal-footer">
+                    <button
+                      className={`${
+                        loading ? "btn-green-disabled" : "btn-green"
+                      } p-1 w-25 rounded`}
+                      onClick={handleGenerateGraph}
+                    >
+                      Generate
+                    </button>
+                  </div>
                 </div>
-                <div className="modal-footer">
-                  <button
-                    className={`${
-                      loading ? "btn-green-disabled" : "btn-green"
-                    } p-1 w-25 rounded`}
-                    onClick={handleGenerateGraph}
-                  >
-                    Generate
-                  </button>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </>

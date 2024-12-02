@@ -41,12 +41,13 @@ const ProtectedRoute = ({ children }) => {
 
     if (decodedToken.exp < currentTime) {
       localStorage.removeItem("appData");
-      toast.error("Your session has expired. Please log in again.", {
+      toast.error("Your session has expired.", {
         autoClose: 3000,
       });
 
+      // Redirect to a custom session expired page
       setTimeout(() => {
-        window.location.href = "/login";
+        window.location.href = "/session-expired";
       }, 3000);
 
       return null;

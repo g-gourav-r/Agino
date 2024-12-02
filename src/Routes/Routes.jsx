@@ -6,7 +6,10 @@ import SingupPage from "../components/AuthPages/SignupPage";
 import HomePage from "../components/HomePage/HomePage";
 import DataSource from "../components/DataSource/DataSource";
 import NotePad from "../components/NotePad/NotePad";
+import NotFoundPage from "../components/404Page";
+import SessionExpired from "../components/SessionExpired";
 import Chat from "../components/Chat/Chat";
+import Dashboard from "../components/Dashboard/DashboardMainContent";
 
 function AppRouter() {
   return (
@@ -15,6 +18,9 @@ function AppRouter() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SingupPage />} />
         <Route path="/" element={<LoginPage />} />
+        <Route path="*" element={<NotFoundPage />} />
+        <Route path="/session-expired" element={<SessionExpired />} />
+        <Route path="/dashboard" element={<Dashboard />} />
 
         {/* Protected Routes */}
         <Route

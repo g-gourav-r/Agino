@@ -4,6 +4,7 @@ import { jsPDF } from "jspdf";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBold,
+  faFilePdf,
   faItalic,
   faStrikethrough,
   faCode,
@@ -64,7 +65,7 @@ function NotePadMainContent({ setRefresh, noteID }) {
   const [emailData, setEmailData] = useState({
     subject: "",
     to: "",
-    body: "",
+    body: "Please find the attached PDF in this email for your reference.",
   });
 
   const saveNotesAPI = createApiCall("api/notes", POST);
@@ -120,7 +121,7 @@ function NotePadMainContent({ setRefresh, noteID }) {
         pdf.text("Powered by", 7.8, 10.8, { align: "right" });
 
         pdf.setTextColor(40, 167, 69); // Green
-        pdf.textWithLink("Agino", 8.2, 10.8, { url: "https://agino.tech" });
+        pdf.textWithLink("Agino", 7.85, 10.8, { url: "https://agino.tech" });
       }
 
       // Return the PDF as a buffer (Uint8Array)
@@ -857,9 +858,22 @@ function NotePadMainContent({ setRefresh, noteID }) {
                       <form>
                         {/* To Field */}
                         <div className="mb-3">
-                          <label htmlFor="emailTo" className="form-label">
-                            To
-                          </label>
+                          <div>
+                            <label
+                              htmlFor="emailTo"
+                              className="form-label"
+                              style={{ display: "block" }}
+                            >
+                              To
+                            </label>
+                            <small
+                              style={{ fontSize: "0.875rem", color: "#6c757d" }}
+                            >
+                              Separate multiple email IDs with a{" "}
+                              <span className="text-green">comma</span>.
+                            </small>
+                          </div>
+
                           <input
                             type="email"
                             className="form-control"
@@ -908,6 +922,17 @@ function NotePadMainContent({ setRefresh, noteID }) {
                             }
                           ></textarea>
                         </div>
+                        {/* Attachment Field */}
+                        <div className="mb-3">
+                          <label className="form-label">Attachment</label>
+                          <div>
+                            <FontAwesomeIcon
+                              className="mx-2"
+                              icon={faFilePdf}
+                            />{" "}
+                            {title}.pdf
+                          </div>
+                        </div>
                       </form>
                     </div>
                     <div className="modal-footer">
@@ -919,12 +944,6 @@ function NotePadMainContent({ setRefresh, noteID }) {
                         disabled={sendingMail}
                       >
                         {sendingMail ? "Sending..." : "Send"}
-                      </button>
-                      <button
-                        className="btn btn-secondary p-1 w-25 rounded"
-                        onClick={() => setEmailModal(false)}
-                      >
-                        Close
                       </button>
                     </div>
                   </div>
