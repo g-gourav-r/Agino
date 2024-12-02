@@ -9,7 +9,7 @@ import NotePad from "../components/NotePad/NotePad";
 import NotFoundPage from "../components/404Page";
 import SessionExpired from "../components/SessionExpired";
 import Chat from "../components/Chat/Chat";
-import Dashboard from "../components/Dashboard/DashboardMainContent";
+import Dashboard from "../components/Dashboard/Dashboard";
 
 function AppRouter() {
   return (

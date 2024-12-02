@@ -7,6 +7,7 @@ function Dashboard() {
     <WindowTemplate
       mainContent={<DashboardMainContent />}
       sideBar={<DashboardSidebar />}
+      currentPage={"dashboard"}
     />
   );
 }

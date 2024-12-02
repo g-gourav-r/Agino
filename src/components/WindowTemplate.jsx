@@ -111,9 +111,11 @@ function WindowTemplate({ currentPage, sideBar, mainContent }) {
               </li>
               <li className="nav-item">
                 <a
-                  className="px-2 nav-link disabled user-select-none"
-                  href="#"
-                  onClick={(e) => e.preventDefault()}
+                  className={`px-2 nav-link user-select-none ${
+                    currentPage === "dashboard" ? "active" : ""
+                  }`}
+                  aria-current="page"
+                  onClick={() => navigate("/dashboard")}
                 >
                   Dashboard
                 </a>
