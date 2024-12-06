@@ -262,7 +262,7 @@ function ChatMainContent({ selectedChatId }) {
                             data-key={dataSource._id}
                             value={dataSource.database}
                           >
-                            {dataSource.database}
+                            {dataSource.database || "Unknown Database"}
                           </option>
                         ))}
                       </select>
