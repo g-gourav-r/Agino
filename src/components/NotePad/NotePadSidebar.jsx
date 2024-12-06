@@ -32,16 +32,17 @@ function NotePadSidebar({ refreshNotesSideBar, setNoteID }) {
       });
   }, [refreshNotesSideBar]);
 
-  //   handleNoteSelection(() => {
-  //     alert("clicked");
-  //   });
-
   return (
     <div className="d-flex flex-grow-1 flex-column h-100">
       <div className="text-center m-2">
         <button
           className="w-100 btn-green rounded"
-          onClick={() => setNoteID("new_note")}
+          onClick={() => {
+            const appData = JSON.parse(localStorage.getItem("appData"));
+            appData.notes.notesData = null;
+            localStorage.setItem("appData", JSON.stringify(appData));
+            setNoteID("new_note");
+          }}
         >
           Start a New Note
         </button>
@@ -61,7 +62,12 @@ function NotePadSidebar({ refreshNotesSideBar, setNoteID }) {
               data-bs-toggle="tooltip"
               data-bs-placement="top"
               title={`${note.title}`}
-              onClick={() => setNoteID(note._id)}
+              onClick={() => {
+                const appData = JSON.parse(localStorage.getItem("appData"));
+                appData.notes.notesData = null;
+                localStorage.setItem("appData", JSON.stringify(appData));
+                setNoteID(note._id);
+              }}
             >
               <p className="p-0 m-0">{note.title}</p>
             </button>

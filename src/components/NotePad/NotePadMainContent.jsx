@@ -6,6 +6,8 @@ import {
   faBold,
   faFilePdf,
   faItalic,
+  faExclamation,
+  faCheck,
   faStrikethrough,
   faCode,
   faParagraph,
@@ -31,6 +33,7 @@ import {
   faShareNodes,
   faDownload,
   faTerminal,
+  faCircleExclamation,
 } from "@fortawesome/free-solid-svg-icons";
 // Tiptap imports
 import Document from "@tiptap/extension-document";
@@ -62,6 +65,7 @@ function NotePadMainContent({ setRefresh, noteID }) {
   const [loading, setLoading] = useState(false);
   const [showEmailModal, setEmailModal] = useState(false);
   const [sendingMail, setSendingMail] = useState(false);
+  const [notesStatus, setNotesSaveStatus] = useState(false);
   const [emailData, setEmailData] = useState({
     subject: "",
     to: "",
@@ -195,53 +199,73 @@ function NotePadMainContent({ setRefresh, noteID }) {
   };
 
   useEffect(() => {
-    if (!noteID) return;
+    const appData = JSON.parse(localStorage.getItem("appData"));
+    const localNotesData = appData?.notes?.notesData;
 
-    setLoading(true);
-
-    if (noteID === "new_note") {
-      setTitle("");
-      editor.commands.setContent("");
-      const appData = JSON.parse(localStorage.getItem("appData"));
-      const updatedAppData = {
-        ...appData,
-        notes: {
-          ...appData.notes,
-          notesID: "",
-        },
-      };
-      localStorage.setItem("appData", JSON.stringify(updatedAppData));
+    if (localNotesData) {
+      // If local notes content exists, prioritize it
+      editor.commands.setContent(localNotesData.notesContent);
+      setTitle(localNotesData.notesTitle || "Untitled Note");
       setLoading(false);
-      toast.info("A new note has been created!", { autoClose: 200 });
-    } else {
-      const fetchNotesAPI = createApiCall(`api/notes/${noteID}`);
+      toast.info("Loaded local notes content.", { autoClose: 1000 });
+    } else if (noteID) {
+      // If noteID exists but no local notes content, fetch from the API
+      setLoading(true);
 
-      fetchNotesAPI({
-        urlParams: { noteID: noteID },
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
-        .then((response) => {
-          editor.commands.setContent(JSON.parse(response.data.content));
-          setTitle(response.data.title);
-          setLoading(false);
-          const appData = JSON.parse(localStorage.getItem("appData"));
-          const updatedAppData = {
-            ...appData,
-            notes: {
-              ...appData.notes,
-              notesID: response.data._id,
-            },
-          };
-          localStorage.setItem("appData", JSON.stringify(updatedAppData));
+      if (noteID === "new_note") {
+        setTitle("");
+        editor.commands.setContent("");
+        setNotesSaveStatus(false);
+        const updatedAppData = {
+          ...appData,
+          notes: {
+            ...appData.notes,
+            notesID: "",
+          },
+        };
+        localStorage.setItem("appData", JSON.stringify(updatedAppData));
+        setLoading(false);
+        toast.info("A new note has been created!", { autoClose: 200 });
+      } else {
+        const fetchNotesAPI = createApiCall(`api/notes/${noteID}`);
+
+        fetchNotesAPI({
+          urlParams: { noteID: noteID },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         })
-        .catch((error) => {
-          setLoading(false);
-          toast.error("Failed to load the note.");
-          console.error(error);
-        });
+          .then((response) => {
+            setNotesSaveStatus(true);
+            const updatedContent = JSON.parse(response.data.content);
+            const updatedAppData = {
+              ...appData,
+              notes: {
+                ...appData.notes,
+                notesData: {
+                  ...appData.notes.notesData,
+                  notesTitle: response.data.title,
+                  notesContent: updatedContent,
+                },
+              },
+            };
+            editor.commands.setContent(updatedContent);
+            setTitle(response.data.title);
+            setLoading(false);
+
+            // Save the updated app data to localStorage
+            localStorage.setItem("appData", JSON.stringify(updatedAppData));
+          })
+
+          .catch((error) => {
+            setLoading(false);
+            toast.error("Failed to load the note.");
+            console.error(error);
+          });
+      }
+    } else {
+      setLoading(false);
     }
   }, [noteID]);
 
@@ -332,11 +356,39 @@ function NotePadMainContent({ setRefresh, noteID }) {
     content: ``,
     onUpdate: ({ editor }) => {
       setNotesData(editor.getJSON());
+      setNotesSaveStatus(false);
+      const appData = JSON.parse(localStorage.getItem("appData")) || {};
+      const updatedAppData = {
+        ...appData,
+        notes: {
+          ...appData.notes,
+          notesData: {
+            ...(appData.notes?.notesData || {}),
+            notesContent: editor.getJSON(),
+          },
+        },
+      };
+      localStorage.setItem("appData", JSON.stringify(updatedAppData));
     },
   });
 
   const handleTitleChange = (e) => {
     setTitle(e.target.value);
+    setNotesSaveStatus(false);
+    const appData = JSON.parse(localStorage.getItem("appData"));
+    const updatedAppData = {
+      ...appData,
+      notes: {
+        ...appData.notes,
+        notesData: {
+          ...(appData.notes?.notesData || {}),
+          notesTitle: e.target.value,
+        },
+      },
+    };
+
+    // Save the updated data back to localStorage
+    localStorage.setItem("appData", JSON.stringify(updatedAppData));
   };
 
   const handleDownload = async () => {
@@ -395,6 +447,7 @@ function NotePadMainContent({ setRefresh, noteID }) {
         },
       })
         .then((response) => {
+          setNotesSaveStatus(true);
           toast.update(saveNotesToast, {
             render: "Note saved successfully!",
             type: "success",
@@ -488,6 +541,22 @@ function NotePadMainContent({ setRefresh, noteID }) {
               onChange={handleTitleChange}
             />
             <div className="d-flex">
+              <button
+                className={` ${
+                  notesStatus ? "  btn-success" : "btn-danger"
+                } d-flex p-2 btn rounded align-items-center me-2`}
+                data-toggle="tooltip"
+                data-placement="bottom"
+                title={
+                  notesStatus
+                    ? "Your note is saved"
+                    : "Save your note to preserve your progress"
+                }
+              >
+                <FontAwesomeIcon
+                  icon={notesStatus ? faCheck : faCircleExclamation}
+                />
+              </button>
               <button
                 type="button"
                 className="btn-green d-flex p-2 rounded align-items-center me-2"
