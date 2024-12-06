@@ -259,10 +259,10 @@ function ChatMainContent({ selectedChatId }) {
                         {dataSources.map((dataSource, index) => (
                           <option
                             key={index}
-                            data-key={dataSource.database}
+                            data-key={dataSource._id}
                             value={dataSource.database}
                           >
-                            {dataSource.aliasName}
+                            {dataSource.database}
                           </option>
                         ))}
                       </select>
