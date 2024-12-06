@@ -6,7 +6,7 @@ function HomePageSidebar() {
       id: 1,
       name: "Dashboard",
       description:
-        "A unified dashboard to view and manage all activities in one place.",
+        "A unified dashboard to view and manage your KPIs in one place.",
       status: "Coming Soon",
     },
     {
