@@ -2,9 +2,9 @@ name: Upload Website
 
 on:
   push:
-    branches: ["production"]
+    branches: ["production", "staging"]
   pull_request:
-    branches: ["production"]
+    branches: ["production", "staging"]
 
 jobs:
   build:
@@ -45,6 +45,14 @@ jobs:
 
       - name: Build app
         run: npm run build
+              - name: Set S3 bucket based on branch
+        id: set_bucket
+        run: |
+          if [ "${GITHUB_REF##*/}" == "staging" ]; then
+            echo "S3_BUCKET=${{ secrets.AWS_S3_BUCKET_STAGING }}" >> $GITHUB_ENV
+          else
+            echo "S3_BUCKET=${{ secrets.AWS_S3_BUCKET_PRODUCTION }}" >> $GITHUB_ENV
+          fi
 
       - name: Upload to S3
         uses: jakejarvis/s3-sync-action@master
