@@ -4,7 +4,7 @@ import MutatingDotsLoader from "../Loaders/MutatingDots";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faDatabase } from "@fortawesome/free-solid-svg-icons";
 
-function DataSourceSideBar({ refreshDataSourceSideBar, setShowDataBaseTable }) {
+function DataSourceSideBar({ refreshDataSourceSideBar }) {
   const [connectedDataSources, setConnectedDataSources] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -47,16 +47,9 @@ function DataSourceSideBar({ refreshDataSourceSideBar, setShowDataBaseTable }) {
         <>
           {connectedDataSources.length > 0 ? (
             connectedDataSources.map((source) => (
-              <button
+              <div
+                className="btn-black-reverse m-1 rounded p-0 border"
                 key={source._id}
-                id={source._id}
-                className="mx-2 rounded btn-outline border-bottom note-item p-1 mb-2 text-start"
-                data-bs-toggle="tooltip"
-                data-bs-placement="top"
-                title={`${
-                  source.aliasName ? source.aliasName : source.database
-                }`}
-                onClick={() => setShowDataBaseTable(source._id)}
               >
                 <p
                   className="text-truncate m-1 rounded"
@@ -67,7 +60,7 @@ function DataSourceSideBar({ refreshDataSourceSideBar, setShowDataBaseTable }) {
                   <FontAwesomeIcon className="mx-2" icon={faDatabase} />
                   {source.aliasName ? source.aliasName : source.database}
                 </p>
-              </button>
+              </div>
             ))
           ) : (
             <div className="text-center text-black">

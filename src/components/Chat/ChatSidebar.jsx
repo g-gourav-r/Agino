@@ -49,8 +49,8 @@ function ChatSidebar({ setChatID }) {
         <button
           className="w-100 btn-green rounded"
           onClick={() => {
-            setChatID(null);
-            setTimeout(() => setChatID("new_chat"), 0);
+            setChatID(null); // Temporarily reset chatID
+            setTimeout(() => setChatID("new_chat"), 0); // Re-set to "new_chat"
           }}
         >
           Start a New Chat

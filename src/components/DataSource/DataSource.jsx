@@ -6,22 +6,15 @@ import { useEffect, useState } from "react";
 
 function DataSource() {
   const [refreshDataSourceSideBar, setRefresh] = useState(false);
-  const [showDataBaseTable, setShowDataBaseTable] = useState(null);
   return (
     <WindowTemplate
       currentPage={"data-source"}
       sideBar={
         <DataSourceSideBar
           refreshDataSourceSideBar={refreshDataSourceSideBar}
-          setShowDataBaseTable={setShowDataBaseTable}
         />
       }
-      mainContent={
-        <DataSourceMainContent
-          setRefresh={setRefresh}
-          showDataBaseTable={showDataBaseTable}
-        />
-      }
+      mainContent={<DataSourceMainContent setRefresh={setRefresh} />}
     />
   );
 }
