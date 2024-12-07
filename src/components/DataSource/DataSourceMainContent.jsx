@@ -32,6 +32,7 @@ function DataSourceMainContent({ setRefresh, showDataBaseTable }) {
   const [showDataBaseTableModal, setDataBaseTableVisiblity] = useState(false);
   const [databaseTables, setDataBaseTables] = useState({});
   const [databaseTableFields, setDatabaseFieldsJSON] = useState({});
+  const [fileName, setFileName] = useState("");
 
   const configurableDataSourcesApi = createApiCall("databaseForm", GET);
   const testDatabaseConnectionApi = createApiCall("testConnection", POST);
@@ -70,7 +71,6 @@ function DataSourceMainContent({ setRefresh, showDataBaseTable }) {
     })
       .then((response) => {
         setDataBaseTables(response.data);
-        console.log(response.data);
         const transformedData = {};
 
         // Loop through each database schema entry
@@ -95,8 +95,6 @@ function DataSourceMainContent({ setRefresh, showDataBaseTable }) {
             transformedData[_id][TABLE_NAME][COLUMN_NAME] = DATA_TYPE;
           });
         });
-
-        console.log(transformedData);
       })
       .catch((error) => {
         setLoading(false);
@@ -236,11 +234,12 @@ function DataSourceMainContent({ setRefresh, showDataBaseTable }) {
       });
   };
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-  };
-
   const handleUploadSheet = () => {
+    if (!fileName) {
+      toast.error("Please add a Data Source Name");
+      return;
+    }
+
     if (!file) {
       toast.error("No file selected. Please choose a file before uploading.");
       return;
@@ -251,6 +250,8 @@ function DataSourceMainContent({ setRefresh, showDataBaseTable }) {
 
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("tableName", fileName);
+    formData.append("action", "new");
 
     uploadSheetApi({
       headers: {
@@ -438,10 +439,18 @@ function DataSourceMainContent({ setRefresh, showDataBaseTable }) {
                   </div>
                   <form>
                     <input
+                      type="text"
+                      name="fileTitle"
+                      className="form-control mb-3"
+                      placeholder="Data Source Name"
+                      value={fileName}
+                      onChange={(e) => setFileName(e.target.value)}
+                    />
+                    <input
                       type="file"
                       accept=".csv, .xls, .xlsx"
                       className="form-control"
-                      onChange={handleFileChange}
+                      onChange={(e) => setFile(e.target.files[0])}
                     />
                   </form>
                 </div>
