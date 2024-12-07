@@ -64,7 +64,12 @@ function NotePadSidebar({ refreshNotesSideBar, setNoteID }) {
               title={`${note.title}`}
               onClick={() => {
                 const appData = JSON.parse(localStorage.getItem("appData"));
-                appData.notes.notesData = null;
+                if (!appData.notes) {
+                  appData.notes = {};
+                }
+                if (appData.notes.notesData !== undefined) {
+                  appData.notes.notesData = null;
+                }
                 localStorage.setItem("appData", JSON.stringify(appData));
                 setNoteID(note._id);
               }}
