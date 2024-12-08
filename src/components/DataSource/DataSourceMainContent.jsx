@@ -11,8 +11,9 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import { faSheetPlastic, faDatabase } from "@fortawesome/free-solid-svg-icons";
 import { toast, ToastContainer } from "react-toastify";
+import { useAsyncError } from "react-router-dom";
 
-function DataSourceMainContent({ setRefresh }) {
+function DataSourceMainContent({ setRefresh, showDataBaseTable }) {
   const [configurableDataSources, setConfigurableDataSources] = useState([]);
   const [loading, setLoading] = useState(false);
   const [checkingDB, setCheckDB] = useState(false);
@@ -28,11 +29,17 @@ function DataSourceMainContent({ setRefresh }) {
   const [connectingToDB, setconntectingToDB] = useState(false);
   const [file, setFile] = useState(null);
   const [fileUpload, setFileUpload] = useState(false);
+  const [showDataBaseTableModal, setDataBaseTableVisiblity] = useState(false);
+  const [databaseTables, setDataBaseTables] = useState({});
+  const [databaseTableFields, setDatabaseFieldsJSON] = useState({});
+  const [fileName, setFileName] = useState("");
 
   const configurableDataSourcesApi = createApiCall("databaseForm", GET);
   const testDatabaseConnectionApi = createApiCall("testConnection", POST);
+  const getDatabaseTablesApi = createApiCall("existingSheets", GET);
   const connectDatabaseApi = createApiCall("database", POST);
   const uploadSheetApi = createApiCall("uploadSheet", POST);
+
   const appData = JSON.parse(localStorage.getItem("appData"));
   const token = appData?.token;
 
@@ -55,7 +62,51 @@ function DataSourceMainContent({ setRefresh }) {
         setLoading(false);
         console.error("Error fetching configurable data sources:", error);
       });
+
+    getDatabaseTablesApi({
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => {
+        setDataBaseTables(response.data);
+        const transformedData = {};
+
+        // Loop through each database schema entry
+        response.data.forEach((entry) => {
+          // Get the _id which will be used as the key
+          const { _id, schema } = entry;
+
+          // Initialize an empty object to store table data for the current _id
+          transformedData[_id] = {};
+
+          // Loop through each column in the schema
+          schema.forEach((column) => {
+            // Get the table name and column details
+            const { TABLE_NAME, COLUMN_NAME, DATA_TYPE } = column;
+
+            // Initialize the table if it doesn't exist yet
+            if (!transformedData[_id][TABLE_NAME]) {
+              transformedData[_id][TABLE_NAME] = {};
+            }
+
+            // Add the column name and data type to the respective table
+            transformedData[_id][TABLE_NAME][COLUMN_NAME] = DATA_TYPE;
+          });
+        });
+      })
+      .catch((error) => {
+        setLoading(false);
+        console.error("Error fetching database tables:", error);
+      });
   }, []);
+
+  useEffect(() => {
+    if (showDataBaseTable != null) {
+      setDataBaseTableVisiblity(true);
+    }
+  }, [showDataBaseTable]);
 
   const handleTestConfig = () => {
     let allFilled = true;
@@ -183,11 +234,12 @@ function DataSourceMainContent({ setRefresh }) {
       });
   };
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-  };
-
   const handleUploadSheet = () => {
+    if (!fileName) {
+      toast.error("Please add a Data Source Name");
+      return;
+    }
+
     if (!file) {
       toast.error("No file selected. Please choose a file before uploading.");
       return;
@@ -198,6 +250,8 @@ function DataSourceMainContent({ setRefresh }) {
 
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("tableName", fileName);
+    formData.append("action", "new");
 
     uploadSheetApi({
       headers: {
@@ -385,10 +439,18 @@ function DataSourceMainContent({ setRefresh }) {
                   </div>
                   <form>
                     <input
+                      type="text"
+                      name="fileTitle"
+                      className="form-control mb-3"
+                      placeholder="Data Source Name"
+                      value={fileName}
+                      onChange={(e) => setFileName(e.target.value)}
+                    />
+                    <input
                       type="file"
                       accept=".csv, .xls, .xlsx"
                       className="form-control"
-                      onChange={handleFileChange}
+                      onChange={(e) => setFile(e.target.files[0])}
                     />
                   </form>
                 </div>
@@ -532,6 +594,51 @@ function DataSourceMainContent({ setRefresh }) {
                     Connect
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+      {showDataBaseTableModal && (
+        <>
+          <div
+            className="modal-backdrop opacity-50 rounded"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+            }}
+          ></div>
+          <div className="modal show d-block" tabIndex="-1">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content bg-white rounded p-2">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    <span className="text-green">{selectedConfig?.dbtype}</span>{" "}
+                    Configuration
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    aria-label="Close"
+                    onClick={() => {
+                      setDataBaseTableVisiblity(false);
+                    }} // Close modal and reset fields
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  {databaseTables.map((source) => (
+                    <div key={source._id} className="mb-3">
+                      <h5>
+                        {source.database} - {source.tableName}
+                      </h5>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="modal-footer">close</div>
               </div>
             </div>
           </div>

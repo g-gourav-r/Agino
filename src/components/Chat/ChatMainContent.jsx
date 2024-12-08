@@ -53,6 +53,7 @@ function ChatMainContent({ selectedChatId }) {
     localStorage.setItem("appData", JSON.stringify(updatedAppData));
     setChatHistory(false);
     setMessages([]);
+    setCurrentDataBase("");
   };
 
   // Fetch the connected DBSources
@@ -243,17 +244,13 @@ function ChatMainContent({ selectedChatId }) {
                         name="dataSource"
                         id="dataSource"
                         disabled={sessionId && selectedDataSource}
-                        value={selectedDataSource || currentDataBase || ""}
+                        value={currentDataBase || ""}
                         onChange={(e) => {
-                          const selectedOption =
-                            e.target.options[e.target.selectedIndex];
-                          const newDataSource =
-                            selectedOption.getAttribute("data-key");
-                          setDataSource(newDataSource);
-                          setCurrentDataBase(newDataSource);
+                          setDataSource(e.target.value);
+                          setCurrentDataBase(e.target.value);
                         }}
                       >
-                        <option value="" disabled>
+                        <option value="" selected>
                           Select a Data Source
                         </option>
                         {dataSources.map((dataSource, index) => (
