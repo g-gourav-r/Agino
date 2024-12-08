@@ -53,19 +53,11 @@ function DataSourceSideBar({ refreshDataSourceSideBar, setShowDataBaseTable }) {
                 className="mx-2 rounded btn-outline border-bottom note-item p-1 mb-2 text-start"
                 data-bs-toggle="tooltip"
                 data-bs-placement="top"
-                title={`${
-                  source.aliasName ? source.aliasName : source.database
-                }`}
-                onClick={() => setShowDataBaseTable(source._id)}
+                title={source.tableName}
               >
-                <p
-                  className="text-truncate m-1 rounded"
-                  data-bs-toggle="tooltip"
-                  data-bs-placement="top"
-                  title={source.aliasName || source.database}
-                >
+                <p className="text-truncate m-1 rounded">
                   <FontAwesomeIcon className="mx-2" icon={faDatabase} />
-                  {source.aliasName ? source.aliasName : source.database}
+                  {source.tableName}
                 </p>
               </button>
             ))

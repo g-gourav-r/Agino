@@ -174,7 +174,7 @@ function ChatMainContent({ selectedChatId }) {
                   query_description: data.query_description || "",
                   followup: data.followup ? [data.followup] : [],
                   DB_response: data.DB_response || [],
-                  error: "",
+                  error: data.error || "", // Include error message if present
                   chatLogID: data.chatLogId,
                 },
               };
@@ -188,10 +188,25 @@ function ChatMainContent({ selectedChatId }) {
               );
             } else {
               toast.error("Error: Missing response data.", { autoClose: 500 });
-              console.error("Error: Missing response data.");
+              setLoadingMessages((prevLoading) =>
+                prevLoading.filter((msg) => msg !== chat)
+              );
             }
           })
           .catch((error) => {
+            // Handle API call failure
+            setMessages((prevMessages) => [
+              ...prevMessages.slice(0, -1),
+              {
+                message: [{ human: chat }],
+                context: {
+                  error: "Failed to send the message to the server.",
+                },
+              },
+            ]);
+            setLoadingMessages((prevLoading) =>
+              prevLoading.filter((msg) => msg !== chat)
+            );
             toast.error("Error sending message", { autoClose: 500 });
             console.error("Error sending message:", error);
           });
@@ -259,7 +274,7 @@ function ChatMainContent({ selectedChatId }) {
                             data-key={dataSource._id}
                             value={dataSource.database}
                           >
-                            {dataSource.database || "Unknown Database"}
+                            {dataSource.tableName || "Unknown Database"}
                           </option>
                         ))}
                       </select>
