@@ -51,6 +51,7 @@ function ChatSidebar({ setChatID }) {
           onClick={() => {
             setChatID(null);
             setTimeout(() => setChatID("new_chat"), 0);
+            clearCurrentChatHistory();
           }}
         >
           Start a New Chat
