@@ -9,10 +9,14 @@ import {
   faSalesforce,
   faFacebook,
 } from "@fortawesome/free-brands-svg-icons";
-import { faSheetPlastic, faDatabase } from "@fortawesome/free-solid-svg-icons";
+import {
+  faSheetPlastic,
+  faDatabase,
+  faChevronDown,
+} from "@fortawesome/free-solid-svg-icons";
 import { toast, ToastContainer } from "react-toastify";
 
-function DataSourceMainContent({ setRefresh }) {
+function DataSourceMainContent({ setRefresh, showDataBaseTable }) {
   const [configurableDataSources, setConfigurableDataSources] = useState([]);
   const [loading, setLoading] = useState(false);
   const [checkingDB, setCheckDB] = useState(false);
@@ -28,11 +32,20 @@ function DataSourceMainContent({ setRefresh }) {
   const [connectingToDB, setconntectingToDB] = useState(false);
   const [file, setFile] = useState(null);
   const [fileUpload, setFileUpload] = useState(false);
+  const [fileupdate, setUpdateFile] = useState(null);
+  const [showDataBaseTableModal, setDataBaseTableVisiblity] = useState(false);
+  const [databaseTables, setDataBaseTables] = useState([]);
+  const [showUpdateFileModal, setShowUpdateFileModal] = useState(false);
+  const [selectedDb, setSelectedDb] = useState("");
+  const [selectedDbTables, setSelectedDbTables] = useState([]);
+  const [fileName, setFileName] = useState("");
 
   const configurableDataSourcesApi = createApiCall("databaseForm", GET);
   const testDatabaseConnectionApi = createApiCall("testConnection", POST);
+  const getDatabaseTablesApi = createApiCall("existingSheets", GET);
   const connectDatabaseApi = createApiCall("database", POST);
   const uploadSheetApi = createApiCall("uploadSheet", POST);
+
   const appData = JSON.parse(localStorage.getItem("appData"));
   const token = appData?.token;
 
@@ -55,12 +68,38 @@ function DataSourceMainContent({ setRefresh }) {
         setLoading(false);
         console.error("Error fetching configurable data sources:", error);
       });
+
+    getDatabaseTablesApi({
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => {
+        setDataBaseTables(
+          response.data.reduce((acc, item) => {
+            acc[item.tableName] = item.schema;
+            return acc;
+          }, {})
+        );
+        console.log(databaseTables);
+      })
+
+      .catch((error) => {
+        setLoading(false);
+        console.error("Error fetching database tables:", error);
+      });
   }, []);
+
+  useEffect(() => {
+    if (showDataBaseTable != null) {
+      setDataBaseTableVisiblity(true);
+    }
+  }, [showDataBaseTable]);
 
   const handleTestConfig = () => {
     let allFilled = true;
 
-    // Ensure `selectedConfig.config` is an array before iterating
     if (Array.isArray(selectedConfig?.config)) {
       selectedConfig.config.forEach((field) => {
         if (!configValues[field]?.trim()) {
@@ -183,11 +222,75 @@ function DataSourceMainContent({ setRefresh }) {
       });
   };
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+  const handleUpdateSheet = () => {
+    if (!selectedDb) {
+      toast.error("No datasource selected. Please select a Data Source.");
+      return;
+    }
+
+    if (!fileupdate) {
+      toast.error("No file selected. Please choose a file before updating.");
+      return;
+    }
+
+    const fileUpdateToast = toast.loading("Updating the file...");
+    setFileUpload(true);
+
+    const formData = new FormData();
+    formData.append("file", fileupdate);
+    formData.append("tableName", selectedDb);
+    formData.append("action", "append");
+
+    uploadSheetApi({
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    })
+      .then((response) => {
+        if (response?.status) {
+          toast.update(fileUpdateToast, {
+            render: "File updated successfully!",
+            type: "success",
+            isLoading: false,
+            autoClose: 3000,
+          });
+          setRefresh((prev) => !prev);
+          setFile(null);
+          setFileUpload(false);
+
+          setTimeout(() => {
+            setShowUpdateFileModal(false);
+          }, 3000);
+        } else {
+          toast.update(fileUpdateToast, {
+            render: response?.message || "Failed to update the file.",
+            type: "error",
+            isLoading: false,
+            autoClose: 3000,
+          });
+          setFileUpload(false);
+        }
+      })
+      .catch((error) => {
+        toast.update(fileUpdateToast, {
+          render: `Error: ${
+            error?.message || "Something went wrong. Please try again later."
+          }`,
+          type: "error",
+          isLoading: false,
+          autoClose: 3000,
+        });
+        setFileUpload(false);
+      });
   };
 
   const handleUploadSheet = () => {
+    if (!fileName) {
+      toast.error("Please add a Data Source Name");
+      return;
+    }
+
     if (!file) {
       toast.error("No file selected. Please choose a file before uploading.");
       return;
@@ -198,6 +301,8 @@ function DataSourceMainContent({ setRefresh }) {
 
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("tableName", fileName);
+    formData.append("action", "new");
 
     uploadSheetApi({
       headers: {
@@ -241,6 +346,18 @@ function DataSourceMainContent({ setRefresh }) {
         });
         setFileUpload(false);
       });
+  };
+
+  // Handle database selection
+  const handleDbSelect = (e) => {
+    const dbName = e.target.value;
+    setSelectedDb(dbName);
+
+    if (dbName) {
+      setSelectedDbTables(databaseTables[dbName] || []);
+    } else {
+      setSelectedDbTables([]);
+    }
   };
 
   return (
@@ -339,8 +456,15 @@ function DataSourceMainContent({ setRefresh }) {
                   className="d-flex col-10 col-md-3 col-lg-2 align-items-center btn-black m-2 p-1 rounded"
                   onClick={() => setShowFileModal(true)}
                 >
-                  <FontAwesomeIcon icon={faSheetPlastic} className="mx-2" />{" "}
-                  Flat Files
+                  <FontAwesomeIcon icon={faSheetPlastic} className="mx-2" /> Add
+                  New Flat File
+                </button>
+                <button
+                  className="d-flex col-10 col-md-3 col-lg-2 align-items-center btn-black m-2 p-1 rounded"
+                  onClick={() => setShowUpdateFileModal(true)}
+                >
+                  <FontAwesomeIcon icon={faSheetPlastic} className="mx-2" />
+                  Update Flat File
                 </button>
               </div>
             </div>
@@ -385,10 +509,18 @@ function DataSourceMainContent({ setRefresh }) {
                   </div>
                   <form>
                     <input
+                      type="text"
+                      name="fileTitle"
+                      className="form-control mb-3"
+                      placeholder="Data Source Name"
+                      value={fileName}
+                      onChange={(e) => setFileName(e.target.value)}
+                    />
+                    <input
                       type="file"
                       accept=".csv, .xls, .xlsx"
                       className="form-control"
-                      onChange={handleFileChange}
+                      onChange={(e) => setFile(e.target.files[0])}
                     />
                   </form>
                 </div>
@@ -402,6 +534,122 @@ function DataSourceMainContent({ setRefresh }) {
                     disabled={fileUpload}
                   >
                     Upload
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+      {showUpdateFileModal && (
+        <>
+          <div
+            className="modal-backdrop opacity-50 rounded"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+            }}
+          ></div>
+          <div className="modal show d-block">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content bg-white rounded p-2">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    Update <span className="text-green">Flat File</span>
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    aria-label="Close"
+                    onClick={() => setShowUpdateFileModal(false)}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <div>
+                    <p>
+                      {" "}
+                      Only <span className="text-green">.csv</span>,{" "}
+                      <span className="text-green">.xls</span>, and{" "}
+                      <span className="text-green">.xlsx</span> file types are
+                      allowed.
+                    </p>
+                  </div>
+                  <form>
+                    <div>
+                      {/* Dropdown to select a database */}
+                      <select
+                        onChange={handleDbSelect}
+                        className="form-control mb-3"
+                      >
+                        <option value="">
+                          Select Database{" "}
+                          <FontAwesomeIcon
+                            className="ms-auto"
+                            icon={faChevronDown}
+                          />
+                        </option>
+                        {Object.keys(databaseTables).map((dbName) => (
+                          <option key={dbName} value={dbName}>
+                            {dbName}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="file"
+                        accept=".csv, .xls, .xlsx"
+                        className="form-control mb-3"
+                        onChange={(e) => setUpdateFile(e.target.files[0])}
+                      />
+
+                      {/* Display the selected database tables and columns */}
+                      {selectedDb && selectedDbTables.length > 0 && (
+                        <div className="border rounded">
+                          <p className="text-center text-green">{selectedDb}</p>
+                          <div className="table-responsive">
+                            {" "}
+                            {/* Add this wrapper for overflow-x */}
+                            <table className="table table-bordered">
+                              <thead>
+                                <tr>
+                                  <th>Column Name</th>
+                                  <th>Data Type</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {selectedDbTables.map((item, index) => (
+                                  <tr key={index}>
+                                    <td>
+                                      {item.COLUMN_NAME || item.column_name}
+                                    </td>
+                                    <td>{item.DATA_TYPE || item.data_type}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* If no database is selected or no tables, show a message */}
+                      {selectedDb && selectedDbTables.length === 0 && (
+                        <p>No tables available for this database.</p>
+                      )}
+                    </div>
+                  </form>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className={`${
+                      fileUpload ? "btn-green-disabled" : "btn-green"
+                    } p-1 px-2 rounded`}
+                    onClick={handleUpdateSheet}
+                    disabled={fileUpload}
+                  >
+                    Update
                   </button>
                 </div>
               </div>
@@ -532,6 +780,51 @@ function DataSourceMainContent({ setRefresh }) {
                     Connect
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+      {showDataBaseTableModal && (
+        <>
+          <div
+            className="modal-backdrop opacity-50 rounded"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+            }}
+          ></div>
+          <div className="modal show d-block" tabIndex="-1">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content bg-white rounded p-2">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    <span className="text-green">{selectedConfig?.dbtype}</span>{" "}
+                    Configuration
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    aria-label="Close"
+                    onClick={() => {
+                      setDataBaseTableVisiblity(false);
+                    }} // Close modal and reset fields
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  {databaseTables.map((source) => (
+                    <div key={source._id} className="mb-3">
+                      <h5>
+                        {source.database} - {source.tableName}
+                      </h5>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="modal-footer">close</div>
               </div>
             </div>
           </div>
