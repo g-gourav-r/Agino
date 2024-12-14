@@ -22,3 +22,25 @@
 body {
   color: $black !important;
 }
+
+.scrolling-container {
+  width: 100%; /* or set a specific width */
+  overflow: hidden;
+  position: relative;
+}
+
+.scrollable-text {
+  display: inline-block;
+  white-space: nowrap;
+  animation: scroll-left 15s linear infinite;
+  color: #6c757d;
+}
+
+@keyframes scroll-left {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}

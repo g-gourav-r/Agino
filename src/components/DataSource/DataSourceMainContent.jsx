@@ -451,6 +451,14 @@ function DataSourceMainContent({ setRefresh, showDataBaseTable }) {
               <h5>
                 <span className="text-green font-weight-bold">Data</span> Import
               </h5>
+              <small>
+                {"To add a new data source, select "}
+                <span className="text-green">Add New Flat File</span>
+                {"; to update an existing one, click "}
+                <span className="text-green">Update Flat File</span>
+                {"."}
+              </small>
+
               <div className="d-flex mt-3 flex-wrap row">
                 <button
                   className="d-flex col-10 col-md-3 col-lg-2 align-items-center btn-black m-2 p-1 rounded"
@@ -568,14 +576,16 @@ function DataSourceMainContent({ setRefresh, showDataBaseTable }) {
                   ></button>
                 </div>
                 <div className="modal-body">
-                  <div>
-                    <p>
-                      {" "}
-                      Only <span className="text-green">.csv</span>,{" "}
-                      <span className="text-green">.xls</span>, and{" "}
-                      <span className="text-green">.xlsx</span> file types are
-                      allowed.
-                    </p>
+                  <div className="scrolling-container pb-2">
+                    <div className="scrollable-text">
+                      {"Select a "}
+                      <span className="text-green">data source</span>
+                      {" from the dropdown, ensure the new sheet "}
+                      <span className="text-green">matches the format</span>
+                      {" shown, and "}
+                      <span className="text-green">update</span>
+                      {" it."}
+                    </div>
                   </div>
                   <form>
                     <div>
@@ -606,25 +616,32 @@ function DataSourceMainContent({ setRefresh, showDataBaseTable }) {
 
                       {/* Display the selected database tables and columns */}
                       {selectedDb && selectedDbTables.length > 0 && (
-                        <div className="border rounded">
-                          <p className="text-center text-green">{selectedDb}</p>
+                        <div className="container border rounded bg-light my-4">
+                          <div className="d-flex p-2 bg-light border-bottom">
+                            <p className="fw-bold text-green mx-auto mb-0">
+                              {selectedDb}
+                            </p>
+                          </div>
+
                           <div className="table-responsive">
-                            {" "}
-                            {/* Add this wrapper for overflow-x */}
                             <table className="table table-bordered">
                               <thead>
                                 <tr>
-                                  <th>Column Name</th>
-                                  <th>Data Type</th>
+                                  {selectedDbTables.map((item, index) => (
+                                    <th key={index} className="text-start p-2">
+                                      {item.COLUMN_NAME || item.column_name}
+                                    </th>
+                                  ))}
                                 </tr>
                               </thead>
                               <tbody>
-                                {selectedDbTables.map((item, index) => (
-                                  <tr key={index}>
-                                    <td>
-                                      {item.COLUMN_NAME || item.column_name}
-                                    </td>
-                                    <td>{item.DATA_TYPE || item.data_type}</td>
+                                {[...Array(3)].map((_, rowIndex) => (
+                                  <tr key={rowIndex}>
+                                    {selectedDbTables.map((_, colIndex) => (
+                                      <td key={colIndex} className="p-2">
+                                        &nbsp;
+                                      </td>
+                                    ))}
                                   </tr>
                                 ))}
                               </tbody>
