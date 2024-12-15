@@ -102,3 +102,18 @@
     color: $text-dark-gray;
   }
 }
+
+.btn-green-disabled-tooltip {
+  @include button(
+    rgba($primary-color, 0.6),
+    // background color with opacity (slightly opaque)
+    $white,
+    // text color (unchanged)
+    rgba($primary-color, 0.6),
+    // text color
+    $white,
+    // hover background color (same as background)
+    $primary-color // hover text color (same as text)
+  );
+  opacity: 0.6; // Apply opacity to the entire button to make it appear disabled
+}
