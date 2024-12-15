@@ -443,14 +443,14 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
         </button>
         <button
           className={`${
-            DB_response.length > 4 && Object.keys(DB_response[0]).length > 2
+            DB_response.length >= 4 && Object.keys(DB_response[0]).length >= 2
               ? "btn-green"
               : "btn-green-disabled-tooltip"
           } p-1 rounded m-2 text-start`}
           onClick={() => {
             if (
-              DB_response.length > 4 &&
-              Object.keys(DB_response[0]).length > 2
+              DB_response.length >= 4 &&
+              Object.keys(DB_response[0]).length >= 2
             ) {
               setGraphModalVisiblity(true);
             }
@@ -606,69 +606,99 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
                     </p>
                     <Line data={sampleData} options={sampleOptions} />
                     <div className="row p-2 border rounded d-flex flex-row justify-content-between">
-                      {/* X-Axis Dropdown (on the left side) */}
-                      <div className="d-flex justify-content-between align-items-center p-2">
-                        <label htmlFor="x-axis">X parameter</label>
-                        <div className="">
-                          <select
-                            name="x-axis"
-                            id="x-axis"
-                            onChange={(e) => setSelectedX(e.target.value)}
-                            value={selectedX}
-                            className="btn-menu rounded"
+                      <div className="container-fluid">
+                        {/* X-Axis Dropdown */}
+                        <div className="row mb-3 align-items-center">
+                          <label
+                            htmlFor="x-axis"
+                            className="col-sm-2 col-form-label"
                           >
-                            <option value="" disabled>
-                              Select a parameter
-                            </option>
-                            {headers.map((header, index) => (
-                              <option key={index} value={header}>
-                                {header}
+                            X Parameter
+                          </label>
+                          <div className="col-sm-10">
+                            <select
+                              name="x-axis"
+                              id="x-axis"
+                              onChange={(e) => setSelectedX(e.target.value)}
+                              value={selectedX}
+                              className="form-select text-truncate w-100 overflow-hidden position-relative"
+                            >
+                              <option value="" disabled>
+                                Select a parameter
                               </option>
-                            ))}
-                          </select>
+                              {headers.map((header, index) => (
+                                <option
+                                  key={index}
+                                  value={header}
+                                  className="text-truncate"
+                                >
+                                  {header}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Y-Axis Dropdown (on the right side) */}
-                      <div className="d-flex justify-content-between align-items-center p-2">
-                        <label htmlFor="y-axis">Y1 parameter</label>
-                        <div>
-                          <select
-                            name="y-axis"
-                            id="y-axis"
-                            onChange={(e) => setSelectedY1(e.target.value)}
-                            value={selectedY1}
-                            className="ms-2 btn-menu rounded"
+                        {/* Y1-Axis Dropdown */}
+                        <div className="row mb-3 align-items-center">
+                          <label
+                            htmlFor="y-axis"
+                            className="col-sm-2 col-form-label"
                           >
-                            <option value="" disabled>
-                              Select a parameter
-                            </option>
-                            {headers.map((header, index) => (
-                              <option key={index} value={header}>
-                                {header}
+                            Y1 Parameter
+                          </label>
+                          <div className="col-sm-10">
+                            <select
+                              name="y-axis"
+                              id="y-axis"
+                              onChange={(e) => setSelectedY1(e.target.value)}
+                              value={selectedY1}
+                              className="form-select text-truncate w-100 overflow-hidden position-relative"
+                            >
+                              <option value="" disabled>
+                                Select a parameter
                               </option>
-                            ))}
-                          </select>
+                              {headers.map((header, index) => (
+                                <option
+                                  key={index}
+                                  value={header}
+                                  className="text-truncate"
+                                >
+                                  {header}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
-                      </div>
-                      {/* Y2 parameter */}
-                      <div className="d-flex justify-content-between align-items-center p-2">
-                        <label htmlFor="y-axis">Y2 Parameter</label>
-                        <div>
-                          <select
-                            name="y-axis"
-                            id="y-axis"
-                            onChange={(e) => setSelectedY2(e.target.value)}
-                            value={selectedY2}
-                            className="btn-menu rounded"
+
+                        {/* Y2-Axis Dropdown */}
+                        <div className="row mb-3 align-items-center">
+                          <label
+                            htmlFor="y-axis"
+                            className="col-sm-2 col-form-label"
                           >
-                            <option value="">Select a parameter</option>
-                            {headers.map((header, index) => (
-                              <option key={index} value={header}>
-                                {header}
-                              </option>
-                            ))}
-                          </select>
+                            Y2 Parameter
+                          </label>
+                          <div className="col-sm-10">
+                            <select
+                              name="y-axis"
+                              id="y-axis"
+                              onChange={(e) => setSelectedY2(e.target.value)}
+                              value={selectedY2}
+                              className="form-select text-truncate w-100 overflow-hidden position-relative"
+                            >
+                              <option value="">Select a parameter</option>
+                              {headers.map((header, index) => (
+                                <option
+                                  key={index}
+                                  value={header}
+                                  className="text-truncate"
+                                >
+                                  {header}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
                       </div>
                     </div>
