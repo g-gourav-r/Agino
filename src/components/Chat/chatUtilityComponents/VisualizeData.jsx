@@ -83,6 +83,8 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
 
   if (!DB_response || DB_response.length === 0) return null;
 
+  console.log(DB_response);
+
   const headers = Object.keys(DB_response[0]);
   const totalPages = Math.ceil(DB_response.length / rowsPerPage);
   const currentRows = DB_response.slice(
@@ -440,14 +442,32 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
           <FontAwesomeIcon className="mx-2" icon={faCopy} /> Copy Table
         </button>
         <button
-          className="btn-green p-1 rounded m-2 text-start"
+          className={`${
+            DB_response.length > 4 && Object.keys(DB_response[0]).length > 2
+              ? "btn-green"
+              : "btn-green-disabled-tooltip"
+          } p-1 rounded m-2 text-start`}
           onClick={() => {
-            setGraphModalVisiblity(true);
+            if (
+              DB_response.length > 4 &&
+              Object.keys(DB_response[0]).length > 2
+            ) {
+              setGraphModalVisiblity(true);
+            }
           }}
+          {...(DB_response.length <= 4 ||
+          Object.keys(DB_response[0]).length <= 2
+            ? {
+                "data-bs-toggle": "tooltip",
+                "data-bs-placement": "bottom",
+                title: "Insufficient data to generate a graph",
+              }
+            : {})}
         >
           <FontAwesomeIcon className="mx-2" icon={faChartLine} />{" "}
           {showGraph ? "Regenerate" : "Generate"} Graph
         </button>
+
         {showGraph && (
           <>
             <select
