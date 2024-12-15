@@ -443,14 +443,14 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
         </button>
         <button
           className={`${
-            DB_response.length > 4 && Object.keys(DB_response[0]).length > 2
+            DB_response.length >= 4 && Object.keys(DB_response[0]).length >= 2
               ? "btn-green"
               : "btn-green-disabled-tooltip"
           } p-1 rounded m-2 text-start`}
           onClick={() => {
             if (
-              DB_response.length > 4 &&
-              Object.keys(DB_response[0]).length > 2
+              DB_response.length >= 4 &&
+              Object.keys(DB_response[0]).length >= 2
             ) {
               setGraphModalVisiblity(true);
             }
