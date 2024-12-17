@@ -6,6 +6,7 @@ import MutatingDotsLoader from "../Loaders/MutatingDots";
 import { Tabs, Tab } from "react-bootstrap";
 import ReactMarkdown from "react-markdown";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { v4 as uuidv4 } from "uuid";
 import {
   faDatabase,
   faPaperPlane,
@@ -33,6 +34,13 @@ function ChatMainContent({ selectedChatId }) {
   const appData = JSON.parse(localStorage.getItem("appData"));
   const token = appData?.token;
   const psid = appData?.psid;
+  if (!psid) {
+    const data = {
+      ...appData,
+      psid: uuidv4(),
+    };
+    localStorage.setItem("appData", JSON.stringify(data));
+  }
   const sessionId = appData?.chatData?.sessionID;
   const selectedDataSource = appData?.chatData?.selectedDataSource;
 
