@@ -8,6 +8,8 @@ import {
   faGear,
   faExpand,
   faCompress,
+  faTachographDigital,
+  faPlusCircle,
 } from "@fortawesome/free-solid-svg-icons";
 
 import {
@@ -51,8 +53,9 @@ ChartJS.register(
 
 const getGraphData = createApiCall("graphData", POST);
 const downloadReportApi = createApiCall("getSheet", GET);
+const addToDashboardApi = createApiCall("dashboardAnalytics", POST);
 
-const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
+const VisualizeData = ({ DB_response, ChatLogId, query }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showGraphModal, setGraphModalVisiblity] = useState(false);
   const [graphType, setGraphType] = useState("Line");
@@ -63,6 +66,7 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
   const [graphValues, setGraphValues] = useState([]);
   const [showGraph, setShowGraph] = useState(false);
   const [showGraphSettings, setGraphSettingsVisiblity] = useState(false);
+  const [dashboardTitle, setDashboardTitle] = useState("");
 
   // States for dynamic chart configurations
   const [showLegend, setShowLegend] = useState(true);
@@ -74,16 +78,17 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
   const [y2Position, setY2Position] = useState("right"); // Options: 'left', 'right'
   const [graphTitle, setGraphTitle] = useState("");
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [showDashboardModal, setDashboardModalVisiblity] = useState(false);
   const graphContainerRef = useRef(null);
+  const [ableToGenerateGraph, setGraphGenerationAbility] = useState(false);
 
   const appData = JSON.parse(localStorage.getItem("appData"));
   const token = appData?.token;
+  const selectedDataSource = appData?.chatData?.selectedDataSource;
 
   const rowsPerPage = 5;
 
   if (!DB_response || DB_response.length === 0) return null;
-
-  console.log(DB_response);
 
   const headers = Object.keys(DB_response[0]);
   const totalPages = Math.ceil(DB_response.length / rowsPerPage);
@@ -91,6 +96,12 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage
   );
+
+  useEffect(() => {
+    if (headers.length >= 2 && currentRows.length > 2) {
+      setGraphGenerationAbility(true);
+    }
+  }, []);
 
   const scrollableContainerStyle = {
     overflowX: "auto",
@@ -353,6 +364,59 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
     }
   };
 
+  // Handle Add to Dashboard
+  const handleAddToDashboard = () => {
+    if (!dashboardTitle) {
+      toast.error("Please add the title", { autoClose: 1000 });
+      return;
+    }
+
+    setLoading(true);
+    // Initialize a loading toast
+    const addToDashboardToast = toast.loading("Adding to Dashboard...");
+    addToDashboardApi({
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: {
+        database: selectedDataSource,
+        query: query,
+        title: dashboardTitle,
+        type: "graph",
+        graphoption: {
+          "co-ordinate": {
+            X: selectedX,
+            Y1: selectedY1,
+            Y2: selectedY2,
+          },
+          options: options,
+        },
+      },
+    })
+      .then((response) => {
+        setLoading(false);
+        // Update the toast to show success
+        toast.update(addToDashboardToast, {
+          render: "Added to dashboard successfully",
+          autoClose: 1000,
+          type: "success",
+          isLoading: false,
+        });
+      })
+      .catch((error) => {
+        setLoading(false);
+        // Update the toast to show an error
+        toast.update(addToDashboardToast, {
+          render: "Failed to create graph, try again",
+          autoClose: 1000,
+          type: "error",
+          isLoading: false,
+        });
+        console.error(`API fetch failed, ${error}`);
+      });
+  };
+
   return (
     <>
       <div>
@@ -441,28 +505,22 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
         >
           <FontAwesomeIcon className="mx-2" icon={faCopy} /> Copy Table
         </button>
+
         <button
           className={`${
-            DB_response.length >= 4 && Object.keys(DB_response[0]).length >= 2
-              ? "btn-green"
-              : "btn-green-disabled-tooltip"
+            ableToGenerateGraph ? "btn-green" : "btn-green-disabled-tooltip"
           } p-1 rounded m-2 text-start`}
           onClick={() => {
-            if (
-              DB_response.length >= 4 &&
-              Object.keys(DB_response[0]).length >= 2
-            ) {
-              setGraphModalVisiblity(true);
-            }
+            setGraphModalVisiblity(true);
           }}
-          {...(DB_response.length <= 4 ||
-          Object.keys(DB_response[0]).length <= 2
-            ? {
-                "data-bs-toggle": "tooltip",
-                "data-bs-placement": "bottom",
-                title: "Insufficient data to generate a graph",
-              }
-            : {})}
+          disabled={!ableToGenerateGraph}
+          data-bs-toggle={!ableToGenerateGraph ? "tooltip" : undefined}
+          data-bs-placement="bottom"
+          title={
+            !ableToGenerateGraph
+              ? "Insufficient Data to Generate Graph"
+              : undefined
+          }
         >
           <FontAwesomeIcon className="mx-2" icon={faChartLine} />{" "}
           {showGraph ? "Regenerate" : "Generate"} Graph
@@ -498,6 +556,23 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
             >
               <FontAwesomeIcon icon={faGear} /> Graph Settings
             </button>
+            <button
+              className={`${
+                selectedDataSource ? "btn-green" : "btn-green-disabled-tooltip"
+              } p-1 rounded m-2 text-start`}
+              disabled={!selectedDataSource}
+              data-bs-toggle={!selectedDataSource ? "tooltip" : undefined}
+              data-bs-placement="bottom"
+              title={
+                !selectedDataSource
+                  ? "Chat histories are read-only. Start a new chat to add to the dashboard"
+                  : undefined
+              }
+              onClick={() => setDashboardModalVisiblity(true)}
+            >
+              <FontAwesomeIcon icon={faPlusCircle} /> Add to Dashboard
+            </button>
+
             <button
               className="btn-green p-1 rounded m-2 text-start"
               onClick={() => setIsModalVisible(true)}
@@ -606,99 +681,69 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
                     </p>
                     <Line data={sampleData} options={sampleOptions} />
                     <div className="row p-2 border rounded d-flex flex-row justify-content-between">
-                      <div className="container-fluid">
-                        {/* X-Axis Dropdown */}
-                        <div className="row mb-3 align-items-center">
-                          <label
-                            htmlFor="x-axis"
-                            className="col-sm-2 col-form-label"
+                      {/* X-Axis Dropdown (on the left side) */}
+                      <div className="d-flex justify-content-between align-items-center p-2">
+                        <label htmlFor="x-axis">X parameter</label>
+                        <div className="">
+                          <select
+                            name="x-axis"
+                            id="x-axis"
+                            onChange={(e) => setSelectedX(e.target.value)}
+                            value={selectedX}
+                            className="btn-menu rounded"
                           >
-                            X Parameter
-                          </label>
-                          <div className="col-sm-10">
-                            <select
-                              name="x-axis"
-                              id="x-axis"
-                              onChange={(e) => setSelectedX(e.target.value)}
-                              value={selectedX}
-                              className="form-select text-truncate w-100 overflow-hidden position-relative"
-                            >
-                              <option value="" disabled>
-                                Select a parameter
+                            <option value="" disabled>
+                              Select a parameter
+                            </option>
+                            {headers.map((header, index) => (
+                              <option key={index} value={header}>
+                                {header}
                               </option>
-                              {headers.map((header, index) => (
-                                <option
-                                  key={index}
-                                  value={header}
-                                  className="text-truncate"
-                                >
-                                  {header}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
+                            ))}
+                          </select>
                         </div>
+                      </div>
 
-                        {/* Y1-Axis Dropdown */}
-                        <div className="row mb-3 align-items-center">
-                          <label
-                            htmlFor="y-axis"
-                            className="col-sm-2 col-form-label"
+                      {/* Y-Axis Dropdown (on the right side) */}
+                      <div className="d-flex justify-content-between align-items-center p-2">
+                        <label htmlFor="y-axis">Y1 parameter</label>
+                        <div>
+                          <select
+                            name="y-axis"
+                            id="y-axis"
+                            onChange={(e) => setSelectedY1(e.target.value)}
+                            value={selectedY1}
+                            className="ms-2 btn-menu rounded"
                           >
-                            Y1 Parameter
-                          </label>
-                          <div className="col-sm-10">
-                            <select
-                              name="y-axis"
-                              id="y-axis"
-                              onChange={(e) => setSelectedY1(e.target.value)}
-                              value={selectedY1}
-                              className="form-select text-truncate w-100 overflow-hidden position-relative"
-                            >
-                              <option value="" disabled>
-                                Select a parameter
+                            <option value="" disabled>
+                              Select a parameter
+                            </option>
+                            {headers.map((header, index) => (
+                              <option key={index} value={header}>
+                                {header}
                               </option>
-                              {headers.map((header, index) => (
-                                <option
-                                  key={index}
-                                  value={header}
-                                  className="text-truncate"
-                                >
-                                  {header}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
+                            ))}
+                          </select>
                         </div>
-
-                        {/* Y2-Axis Dropdown */}
-                        <div className="row mb-3 align-items-center">
-                          <label
-                            htmlFor="y-axis"
-                            className="col-sm-2 col-form-label"
+                      </div>
+                      {/* Y2 parameter */}
+                      <div className="d-flex justify-content-between align-items-center p-2">
+                        <label htmlFor="y-axis">Y2 Parameter</label>
+                        <div>
+                          <select
+                            name="y-axis"
+                            id="y-axis"
+                            onChange={(e) => setSelectedY2(e.target.value)}
+                            value={selectedY2}
+                            className="btn-menu rounded"
                           >
-                            Y2 Parameter
-                          </label>
-                          <div className="col-sm-10">
-                            <select
-                              name="y-axis"
-                              id="y-axis"
-                              onChange={(e) => setSelectedY2(e.target.value)}
-                              value={selectedY2}
-                              className="form-select text-truncate w-100 overflow-hidden position-relative"
-                            >
-                              <option value="">Select a parameter</option>
-                              {headers.map((header, index) => (
-                                <option
-                                  key={index}
-                                  value={header}
-                                  className="text-truncate"
-                                >
-                                  {header}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
+                            <option value="">Select a parameter</option>
+                            {headers.map((header, index) => (
+                              <option key={index} value={header}>
+                                {header}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                       </div>
                     </div>
@@ -859,6 +904,67 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
                     }}
                   >
                     Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+      {showDashboardModal && (
+        <>
+          <div
+            className="modal-backdrop opacity-50 rounded"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+            }}
+          ></div>
+          <div className="modal show d-block" tabIndex="-1">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content bg-white rounded p-2">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    <FontAwesomeIcon
+                      className="mx-2"
+                      icon={faTachographDigital}
+                    />{" "}
+                    Add to <span className="text-green">Dashboard</span>{" "}
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    aria-label="Close"
+                    onClick={() => {
+                      setDashboardModalVisiblity(false);
+                    }}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <input
+                    type="text"
+                    name=""
+                    className="form-control"
+                    placeholder="Title"
+                    id=""
+                    onChange={(e) => setDashboardTitle(e.target.value)}
+                  />
+                  <div className="text-center mt-4">
+                    <small>Preview</small>
+                    {renderGraph(graphType)}
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    className={`${
+                      loading ? "btn-green-disabled" : "btn-green"
+                    } p-1 w-50 rounded`}
+                    onClick={handleAddToDashboard}
+                  >
+                    Add to dashboard
                   </button>
                 </div>
               </div>
