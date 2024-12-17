@@ -20,7 +20,7 @@ function LoginPage() {
   const handleAuth = () => {
     setLoading(true);
     toast.loading("Authenticating...");
-    window.location.href = "https://primus-1ppt.onrender.com/auth/google";
+    window.location.href = "https://api.agino.tech/auth/google";
   };
 
   const togglePasswordVisibility = () => {
