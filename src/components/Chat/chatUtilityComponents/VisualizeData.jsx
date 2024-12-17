@@ -97,9 +97,11 @@ const VisualizeData = ({ DB_response, ChatLogId, query }) => {
     currentPage * rowsPerPage
   );
 
-  if (headers.length >= 2 && currentRows.length > 3) {
-    setGraphGenerationAbility(true);
-  }
+  useEffect(() => {
+    if (headers.length >= 2 && currentRows.length > 2) {
+      setGraphGenerationAbility(true);
+    }
+  }, []);
 
   const scrollableContainerStyle = {
     overflowX: "auto",
@@ -372,7 +374,6 @@ const VisualizeData = ({ DB_response, ChatLogId, query }) => {
     setLoading(true);
     // Initialize a loading toast
     const addToDashboardToast = toast.loading("Adding to Dashboard...");
-
     addToDashboardApi({
       headers: {
         Authorization: `Bearer ${token}`,
@@ -506,14 +507,25 @@ const VisualizeData = ({ DB_response, ChatLogId, query }) => {
         </button>
 
         <button
-          className={`${ableToGenerateGraph ? btn-green : btn-green-toooltip} p-1 rounded m-2 text-start`}
+          className={`${
+            ableToGenerateGraph ? "btn-green" : "btn-green-disabled-tooltip"
+          } p-1 rounded m-2 text-start`}
           onClick={() => {
             setGraphModalVisiblity(true);
           }}
+          disabled={!ableToGenerateGraph}
+          data-bs-toggle={!ableToGenerateGraph ? "tooltip" : undefined}
+          data-bs-placement="bottom"
+          title={
+            !ableToGenerateGraph
+              ? "Insufficient Data to Generate Graph"
+              : undefined
+          }
         >
           <FontAwesomeIcon className="mx-2" icon={faChartLine} />{" "}
           {showGraph ? "Regenerate" : "Generate"} Graph
         </button>
+
         {showGraph && (
           <>
             <select
@@ -544,14 +556,23 @@ const VisualizeData = ({ DB_response, ChatLogId, query }) => {
             >
               <FontAwesomeIcon icon={faGear} /> Graph Settings
             </button>
-            {selectedDataSource && (
-              <button
-                className="btn-green p-1 rounded m-2 text-start"
-                onClick={() => setDashboardModalVisiblity(true)}
-              >
-                <FontAwesomeIcon icon={faPlusCircle} /> Add to Dashboard
-              </button>
-            )}
+            <button
+              className={`${
+                selectedDataSource ? "btn-green" : "btn-green-disabled-tooltip"
+              } p-1 rounded m-2 text-start`}
+              disabled={!selectedDataSource}
+              data-bs-toggle={!selectedDataSource ? "tooltip" : undefined}
+              data-bs-placement="bottom"
+              title={
+                !selectedDataSource
+                  ? "Chat histories are read-only. Start a new chat to add to the dashboard"
+                  : undefined
+              }
+              onClick={() => setDashboardModalVisiblity(true)}
+            >
+              <FontAwesomeIcon icon={faPlusCircle} /> Add to Dashboard
+            </button>
+
             <button
               className="btn-green p-1 rounded m-2 text-start"
               onClick={() => setIsModalVisible(true)}
