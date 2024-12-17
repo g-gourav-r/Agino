@@ -69,7 +69,7 @@ function LoginPage() {
         });
 
         setTimeout(() => {
-          navigate("/home"); // Navigate after toast is displayed
+          navigate("/chat"); // Navigate after toast is displayed
         }, 300);
       })
       .catch(async (error) => {
