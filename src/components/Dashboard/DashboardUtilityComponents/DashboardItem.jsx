@@ -1,8 +1,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Line } from "react-chartjs-2";
 import { ResizableBox } from "react-resizable";
-import "react-resizable/css/styles.css"; // Import default styles for react-resizable
+import "react-resizable/css/styles.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUpDownLeftRight } from "@fortawesome/free-solid-svg-icons";
 
@@ -33,106 +32,97 @@ ChartJS.register(
   RadialLinearScale
 );
 
-function DashboardItem({ id, title, query }) {
+function DashboardItem({
+  id,
+  title,
+  query,
+  graphType,
+  graphOptions,
+  graphData,
+}) {
   const { attributes, setNodeRef, listeners, transform, transition } =
     useSortable({ id });
-
-  // Sample Data for graph
-  const sampleData = {
-    labels: ["January", "February", "March", "April", "May"], // x-axis labels
-    datasets: [
-      {
-        label: "Y1 Parameter", // Dataset for Y1
-        data: [1200, 1900, 800, 1500, 2000],
-        backgroundColor: "rgba(75, 192, 192, 0.6)", // Bar color
-        borderColor: "rgba(75, 192, 192, 1)",
-        borderWidth: 1,
-        yAxisID: "y1", // Linked to the y1 axis
-      },
-      {
-        label: "Y2 Parameter", // Dataset for Y2
-        data: [20, 25, 15, 30, 35],
-        backgroundColor: "rgba(255, 99, 132, 0.6)", // Bar color
-        borderColor: "rgba(255, 99, 132, 1)",
-        borderWidth: 1,
-        yAxisID: "y2", // Linked to the y2 axis
-      },
-    ],
-  };
-
-  // Sample Options
-  const sampleOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: "top",
-      },
-    },
-    scales: {
-      x: {
-        title: {
-          display: true,
-          text: "X axis", // Label for Y1
-        },
-      },
-      y1: {
-        type: "linear", // First Y-axis is linear
-        position: "left",
-        title: {
-          display: true,
-          text: "Y1 Parameter", // Label for Y1
-        },
-      },
-      y2: {
-        type: "linear", // Second Y-axis is linear
-        position: "right",
-        title: {
-          display: true,
-          text: "Y2 Parameter", // Label for Y2
-        },
-        grid: {
-          drawOnChartArea: false, // Prevent grid lines overlapping with Y1
-        },
-        ticks: {
-          callback: (value) => `${value}%`, // Add % to ticks
-        },
-      },
-    },
-  };
 
   const style = {
     transition,
     transform: CSS.Transform.toString(transform),
   };
 
+  const renderGraph = () => {
+    switch (graphType) {
+      case "Line":
+        return <Line data={graphData} options={graphOptions} />;
+      case "Bar":
+        return <Bar data={graphData} options={graphOptions} />;
+      case "Bubble":
+        return <Bubble data={graphData} options={graphOptions} />;
+      case "Doughnut":
+        return <Doughnut data={graphData} options={graphOptions} />;
+      case "Pie":
+        return <Pie data={graphData} options={graphOptions} />;
+      case "PolarArea":
+        return <PolarArea data={graphData} options={graphOptions} />;
+      case "Radar":
+        return <Radar data={graphData} options={graphOptions} />;
+      case "Scatter":
+        return <Scatter data={graphData} options={graphOptions} />;
+      default:
+        return <Line data={graphData} options={graphOptions} />;
+    }
+  };
+
   return (
-    <div ref={setNodeRef} className="border rounded m-5 p-5" style={style}>
-      {/* Drag handle (Icon) */}
-      <div
-        {...listeners} // Attach drag events to this icon only
-        {...attributes}
-        className="drag-handle"
+    <div
+      ref={setNodeRef}
+      className="card shadow-sm rounded-3 mb-4 p-4"
+      style={style}
+    >
+      {/* Card Header */}
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        {/* Draggable Title with Tooltip */}
+        <h5
+          {...listeners}
+          {...attributes}
+          style={{ cursor: "grab" }}
+          aria-label="Drag to reorder"
+          className="border card-title text-center flex-grow-1 m-0 p-2"
+          data-bs-toggle="tooltip"
+          data-bs-placement="top"
+          title="Drag the card by the title"
+        >
+          {title}
+        </h5>
+
+        {/* Movable Icon */}
+        <FontAwesomeIcon
+          icon={faUpDownLeftRight}
+          style={{ cursor: "grab", marginLeft: "10px" }}
+          {...listeners}
+          {...attributes}
+        />
+      </div>
+
+      {/* Query Output */}
+      <pre
+        className="bg-dark text-white rounded p-3 mb-3"
         style={{
-          cursor: "grab",
-          display: "flex",
-          alignItems: "center",
-          marginBottom: "10px",
+          fontSize: "0.9rem",
+          overflowX: "auto",
         }}
       >
-        <FontAwesomeIcon icon={faUpDownLeftRight} />
-        <span>{title}</span>
-        <span>{query}</span>
-      </div>
+        {query}
+      </pre>
 
       {/* Resizable Chart */}
       <ResizableBox
         width={600}
         height={400}
-        minConstraints={[300, 200]} // Minimum width and height
-        maxConstraints={[1200, 800]} // Maximum width and height
-        resizeHandles={["se"]} // Handles for resizing
+        minConstraints={[300, 200]}
+        maxConstraints={[1200, 800]}
+        resizeHandles={["se"]}
+        className="border rounded"
       >
-        <Line data={sampleData} options={sampleOptions} />
+        {renderGraph()}
       </ResizableBox>
     </div>
   );

@@ -12,7 +12,10 @@ import DashboardColumns from "./DashboardUtilityComponents/DashboardColumns";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import createApiCall, { GET } from "../api/api";
 import { useEffect } from "react";
-import { faDatabase } from "@fortawesome/free-solid-svg-icons";
+import {
+  faDatabase,
+  faExclamationCircle,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MutatingDotsLoader from "../Loaders/MutatingDots";
 import { toast, ToastContainer } from "react-toastify";
@@ -22,6 +25,7 @@ function DashboardMainContent() {
   const [loading, setLoading] = useState(false);
   const [currentDataSource, setCurrentDataSource] = useState("");
   const [dashboardContent, setDashboardContent] = useState([]);
+  const [stateChange, setChangeInState] = useState(false);
 
   const connectedDataSourcesApi = createApiCall("connecteddatabases", GET);
   const fetchDashboardApi = createApiCall("dashboardAnalytics/{id}", GET);
@@ -134,6 +138,7 @@ function DashboardMainContent() {
   };
 
   const handleDragEnd = (event) => {
+    setChangeInState(true);
     const { active, over } = event;
     if (active.id === over.id) return;
 
@@ -157,6 +162,18 @@ function DashboardMainContent() {
       {/*Header */}
       <div>
         <div className="bg-light m-1 p-2 border rounded d-flex align-items-center flex-wrap">
+          <div className="status">
+            {stateChange && (
+              <>
+                <FontAwesomeIcon
+                  icon={faExclamationCircle}
+                  className="text-danger mx-2"
+                />
+                <span className="text-muted">Changes have not been saved</span>
+              </>
+            )}
+          </div>
+
           {dataSources && dataSources.length > 0 ? (
             <>
               <FontAwesomeIcon className="ms-auto me-2" icon={faDatabase} />
@@ -204,7 +221,7 @@ function DashboardMainContent() {
             onDragEnd={handleDragEnd}
             collisionDetection={closestCorners}
           >
-            <DashboardColumns tasks={dashboardContent} />
+            <DashboardColumns widgets={dashboardContent} />
           </DndContext>
         ) : (
           <div className="d-flex flex-column justify-content-center align-items-center flex-grow-1 h-100">

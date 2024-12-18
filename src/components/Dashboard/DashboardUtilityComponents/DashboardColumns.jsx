@@ -4,17 +4,20 @@ import {
 } from "@dnd-kit/sortable";
 import DashboardItem from "./DashboardItem";
 
-function DashboardColumns({ tasks }) {
+function DashboardColumns({ widgets }) {
   return (
     <div>
-      <SortableContext items={tasks} strategy={verticalListSortingStrategy}>
-        {tasks.map((task) => {
+      <SortableContext items={widgets} strategy={verticalListSortingStrategy}>
+        {widgets.map((widget) => {
           return (
             <DashboardItem
-              id={task.id}
-              title={task.title}
-              key={task.id}
-              query={task.query}
+              id={widget.id}
+              key={widget.id}
+              title={widget.title}
+              query={widget.query}
+              graphType={widget.graphType}
+              graphOptions={widget.graphOptions}
+              graphData={widget.graphData}
             />
           );
         })}
