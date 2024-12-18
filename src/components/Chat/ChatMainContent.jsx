@@ -455,6 +455,7 @@ function ChatMainContent({ selectedChatId }) {
                               <VisualizeData
                                 ChatLogId={msg.context?.ChatLogId || msg._id}
                                 DB_response={msg.context.DB_response}
+                                query={msg.context.SQL_query}
                               />
                             </Tab>
                           )}
