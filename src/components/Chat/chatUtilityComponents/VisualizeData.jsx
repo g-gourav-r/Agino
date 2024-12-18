@@ -345,6 +345,7 @@ const VisualizeData = ({ DB_response, ChatLogId, query }) => {
 
   // Function to render the graph
   const renderGraph = () => {
+    setGraphType(graphType);
     switch (graphType) {
       case "Line":
         return <Line data={graphValues} options={options} />;
@@ -393,6 +394,7 @@ const VisualizeData = ({ DB_response, ChatLogId, query }) => {
             Y1: selectedY1,
             Y2: selectedY2,
           },
+          "graph-type": graphType,
           options: options,
         },
       },
