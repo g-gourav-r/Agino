@@ -6,31 +6,15 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUpDownLeftRight } from "@fortawesome/free-solid-svg-icons";
 
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  RadialLinearScale,
-  ArcElement,
-} from "chart.js";
-
-ChartJS.register(
-  CategoryScale,
-  ArcElement,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  RadialLinearScale
-);
+  Line,
+  Bar,
+  Bubble,
+  Doughnut,
+  Pie,
+  PolarArea,
+  Radar,
+  Scatter,
+} from "react-chartjs-2";
 
 function DashboardItem({
   id,
