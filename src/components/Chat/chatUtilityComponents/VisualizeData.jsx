@@ -8,6 +8,9 @@ import {
   faGear,
   faExpand,
   faCompress,
+  faDownload,
+  faFileDownload,
+  faClipboard,
 } from "@fortawesome/free-solid-svg-icons";
 
 import {
@@ -353,6 +356,88 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
     }
   };
 
+  const handleDownloadTable = () => {
+    const downloadingFileToast = toast.loading("Downloading the file...");
+
+    downloadReportApi({
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      urlParams: {
+        chatLogId: ChatLogId,
+      },
+    })
+      .then((response) => {
+        toast.update(downloadingFileToast, {
+          render: (
+            <>
+              <div className="d-flex">
+                <input
+                  className="form-control"
+                  type="text"
+                  readOnly
+                  value={response.url}
+                />
+                <div className="d-flex mx-2">
+                  <a href={response.url} download>
+                    <button
+                      className="btn-green rounded d-flex align-items-center"
+                      style={{ marginRight: "10px", height: "100%" }}
+                      data-bs-toggle="tooltip"
+                      data-bs-placement="top"
+                      title="Download File"
+                    >
+                      <FontAwesomeIcon icon={faFileDownload}></FontAwesomeIcon>
+                    </button>
+                  </a>
+                  <button
+                    className="btn-green rounded d-flex align-items-center"
+                    onClick={() => copyToClipboard(response.url)}
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="top"
+                    title="Copy to Clipboard"
+                    style={{ height: "100%" }}
+                  >
+                    <FontAwesomeIcon icon={faClipboard}></FontAwesomeIcon>
+                  </button>
+                </div>
+              </div>
+            </>
+          ),
+          type: "success",
+          isLoading: false,
+          autoClose: false, // Keep it open until the user closes it
+          closeButton: true, // Optional: Show a close button
+        });
+        console.log(response);
+      })
+      .catch((error) => {
+        toast.update(downloadingFileToast, {
+          render: "File download failed, try again",
+          type: "error",
+          isLoading: false,
+          autoClose: 3000,
+        });
+        console.error("Failed to Download : ", error);
+      });
+  };
+
+  const copyToClipboard = (url) => {
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        toast.success("URL copied to clipboard!", {
+          autoClose: 3000,
+        });
+      })
+      .catch((err) => {
+        toast.error("Failed to copy URL", {
+          autoClose: 3000,
+        });
+      });
+  };
+
   return (
     <>
       <div>
@@ -441,6 +526,16 @@ const VisualizeData = ({ DB_response, ChatLogId, handleShare }) => {
         >
           <FontAwesomeIcon className="mx-2" icon={faCopy} /> Copy Table
         </button>
+        <button
+          className="btn-green p-1 rounded m-2 text-start"
+          onClick={handleDownloadTable}
+          data-bs-toggle="tooltip"
+          data-bs-placement="bottom"
+          title="Download or share the sheet as an XLSX file"
+        >
+          <FontAwesomeIcon className="mx-2" icon={faDownload} /> Download Table
+        </button>
+
         <button
           className={`${
             DB_response.length >= 4 && Object.keys(DB_response[0]).length >= 2
