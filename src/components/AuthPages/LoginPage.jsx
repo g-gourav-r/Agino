@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import createApiCall, { POST } from "../api/api";
-import { v4 as uuidv4 } from "uuid";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGoogle } from "@fortawesome/free-brands-svg-icons";
 import {
@@ -20,7 +19,7 @@ function LoginPage() {
   const handleAuth = () => {
     setLoading(true);
     toast.loading("Authenticating...");
-    window.location.href = "https://primus-1ppt.onrender.com/auth/google";
+    window.location.href = "https://api.agino.tech/auth/google";
   };
 
   const togglePasswordVisibility = () => {
@@ -56,7 +55,6 @@ function LoginPage() {
         const token = response.token;
         const data = {
           token: token,
-          psid: uuidv4(),
         };
         localStorage.setItem("appData", JSON.stringify(data));
 
@@ -69,7 +67,7 @@ function LoginPage() {
         });
 
         setTimeout(() => {
-          navigate("/home"); // Navigate after toast is displayed
+          navigate("/chat"); // Navigate after toast is displayed
         }, 300);
       })
       .catch(async (error) => {
