@@ -82,7 +82,6 @@ function DataSourceMainContent({ setRefresh, showDataBaseTable }) {
             return acc;
           }, {})
         );
-        console.log(databaseTables);
       })
 
       .catch((error) => {
