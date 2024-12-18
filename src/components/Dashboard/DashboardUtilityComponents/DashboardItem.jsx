@@ -33,7 +33,7 @@ ChartJS.register(
   RadialLinearScale
 );
 
-function DashboardItem({ id, title }) {
+function DashboardItem({ id, title, query }) {
   const { attributes, setNodeRef, listeners, transform, transition } =
     useSortable({ id });
 
@@ -121,6 +121,7 @@ function DashboardItem({ id, title }) {
       >
         <FontAwesomeIcon icon={faUpDownLeftRight} />
         <span>{title}</span>
+        <span>{query}</span>
       </div>
 
       {/* Resizable Chart */}

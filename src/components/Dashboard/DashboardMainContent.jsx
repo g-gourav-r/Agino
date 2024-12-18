@@ -15,13 +15,13 @@ import { useEffect } from "react";
 import { faDatabase } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MutatingDotsLoader from "../Loaders/MutatingDots";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 
 function DashboardMainContent() {
   const [dataSources, setDataSources] = useState();
   const [loading, setLoading] = useState(false);
   const [currentDataSource, setCurrentDataSource] = useState("");
-  const [dashboardContent, setDashboardContent] = useState({});
+  const [dashboardContent, setDashboardContent] = useState([]);
 
   const connectedDataSourcesApi = createApiCall("connecteddatabases", GET);
   const fetchDashboardApi = createApiCall("dashboardAnalytics/{id}", GET);
@@ -53,7 +53,7 @@ function DashboardMainContent() {
 
   // Fetch Dashboards
   const handleFetchDashboards = (id) => {
-    setDashboardContent({});
+    setDashboardContent([]);
     setLoading(true);
     fetchDashboardApi({
       headers: {
@@ -66,8 +66,7 @@ function DashboardMainContent() {
     })
       .then((response) => {
         setLoading(false);
-        setDashboardContent(response.data);
-        toast.info(response.data);
+        setDashboardContent(processData(response.data));
       })
       .catch((error) => {
         setLoading(false);
@@ -75,24 +74,74 @@ function DashboardMainContent() {
       });
   };
 
-  const [tasks, setTasks] = useState([
-    { id: 1, title: "Add tests 1" },
-    { id: 2, title: "Add tests 2" },
-    { id: 3, title: "Add tests 3" },
-  ]);
+  // useEffect(() => {
+  //   if (dashboardContent.length > 0) {
+  //     console.log("Updated Dashboard Content:", dashboardContent);
+  //   }
+  // }, [dashboardContent]);
 
-  const getTaskPos = (id) => tasks.findIndex((task) => task.id === id);
+  // Helper function to convert the API Response
+  const processData = (apiResponse) => {
+    const chartData = apiResponse.map((item) => {
+      const { graphoption, data, _id, query, title } = item;
+
+      const xAxis = graphoption.coOrdinate.X;
+      const y1Axis = graphoption.coOrdinate.Y1;
+      const y2Axis = graphoption.coOrdinate.Y2 || "";
+
+      const graphType = graphoption.graphType || "line";
+
+      const graphData = {
+        labels: [],
+        datasets: [
+          {
+            label: y1Axis,
+            data: [],
+            borderColor: "rgba(75, 192, 192, 1)",
+            backgroundColor: "rgba(75, 192, 192, 0.2)",
+            fill: false,
+          },
+        ],
+      };
+
+      data.forEach((entry) => {
+        const xValue = entry[xAxis];
+        const y1Value = entry[y1Axis];
+        graphData.labels.push(xValue);
+        graphData.datasets[0].data.push(y1Value);
+        if (y2Axis) {
+          graphData.datasets.push({
+            label: y2Axis,
+            data: entry[y2Axis] || [],
+            borderColor: "rgba(153, 102, 255, 1)",
+            backgroundColor: "rgba(153, 102, 255, 0.2)",
+            fill: false,
+          });
+        }
+      });
+
+      return {
+        id: _id,
+        title: title,
+        query: query,
+        graphType: graphType,
+        graphOptions: graphoption.options,
+        graphData: graphData,
+      };
+    });
+
+    return chartData;
+  };
 
   const handleDragEnd = (event) => {
     const { active, over } = event;
-
     if (active.id === over.id) return;
 
-    setTasks((tasks) => {
-      const originalPos = getTaskPos(active.id);
-      const newPos = getTaskPos(over.id);
+    setDashboardContent((content) => {
+      const originalPos = content.findIndex((item) => item.id === active.id);
+      const newPos = content.findIndex((item) => item.id === over.id);
 
-      return arrayMove(tasks, originalPos, newPos);
+      return arrayMove(content, originalPos, newPos);
     });
   };
 
@@ -104,6 +153,7 @@ function DashboardMainContent() {
 
   return (
     <>
+      <ToastContainer />
       {/*Header */}
       <div>
         <div className="bg-light m-1 p-2 border rounded d-flex align-items-center flex-wrap">
@@ -154,7 +204,7 @@ function DashboardMainContent() {
             onDragEnd={handleDragEnd}
             collisionDetection={closestCorners}
           >
-            <DashboardColumns tasks={tasks} />
+            <DashboardColumns tasks={dashboardContent} />
           </DndContext>
         ) : (
           <div className="d-flex flex-column justify-content-center align-items-center flex-grow-1 h-100">

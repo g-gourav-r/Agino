@@ -10,7 +10,12 @@ function DashboardColumns({ tasks }) {
       <SortableContext items={tasks} strategy={verticalListSortingStrategy}>
         {tasks.map((task) => {
           return (
-            <DashboardItem id={task.id} title={task.title} key={task.id} />
+            <DashboardItem
+              id={task.id}
+              title={task.title}
+              key={task.id}
+              query={task.query}
+            />
           );
         })}
       </SortableContext>
