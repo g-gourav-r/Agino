@@ -473,10 +473,9 @@ const VisualizeData = ({ DB_response, ChatLogId, query }) => {
           ),
           type: "success",
           isLoading: false,
-          autoClose: false, // Keep it open until the user closes it
-          closeButton: true, // Optional: Show a close button
+          autoClose: false,
+          closeButton: true,
         });
-        console.log(response);
       })
       .catch((error) => {
         toast.update(downloadingFileToast, {

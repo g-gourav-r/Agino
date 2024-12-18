@@ -159,23 +159,24 @@ function DashboardMainContent() {
         ) : (
           <div className="d-flex flex-column justify-content-center align-items-center flex-grow-1 h-100">
             <h2>
-              Monitor your <span class="text-green">KPIs</span> with{" "}
-              <span class="text-green">Agino</span>
+              Monitor your <span className="text-green">KPIs</span> with{" "}
+              <span className="text-green">Agino</span>
             </h2>
             <ul className="mt-2">
               <li>
                 To create a dashboard, start a new{" "}
-                <span class="text-green">chat</span>.
+                <span className="text-green">chat</span>.
               </li>
               <li>
-                Click on "<span class="text-green">Visualize Data</span>" to
-                generate <span class="text-green">graphs</span>.
+                Click on "<span className="text-green">Visualize Data</span>" to
+                generate <span className="text-green">graphs</span>.
               </li>
               <li>
-                Select your desired <span class="text-green">graph</span>.
+                Select your desired <span className="text-green">graph</span>.
               </li>
               <li>
-                Then add it to the <span class="text-green">dashboard</span>.
+                Then add it to the <span className="text-green">dashboard</span>
+                .
               </li>
             </ul>
           </div>
