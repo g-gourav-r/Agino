@@ -595,6 +595,9 @@ const VisualizeData = ({ DB_response, ChatLogId, query }) => {
         <button
           className="btn-green p-1 rounded m-2 text-start"
           onClick={handleDownloadTable}
+          data-bs-toggle="tooltip"
+          data-bs-placement="bottom"
+          title="Download or share the sheet as an XLSX file"
         >
           <FontAwesomeIcon className="mx-2" icon={faDownload} /> Download Table
         </button>
