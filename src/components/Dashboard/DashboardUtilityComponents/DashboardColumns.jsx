@@ -15,9 +15,9 @@ function DashboardColumns({ widgets }) {
               key={widget.id}
               title={widget.title}
               query={widget.query}
-              graphType={widget.graphType}
-              graphOptions={widget.graphOptions}
-              graphData={widget.graphData}
+              graphType={widget.widgetData.graphType}
+              graphOptions={widget.widgetData.graphOptions}
+              graphData={widget.widgetData.graphData}
             />
           );
         })}
