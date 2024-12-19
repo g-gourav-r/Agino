@@ -1,0 +1,17 @@
+.widget .tiptap {
+  min-height: auto !important;
+  height: auto;
+  max-height: 80vh;
+  overflow-y: hidden;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  display: block;
+}
+
+.widget .tiptap:focus {
+  border-color: #28a745;
+  outline: none;
+}
