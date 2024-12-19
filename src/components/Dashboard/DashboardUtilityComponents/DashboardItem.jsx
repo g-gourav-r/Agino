@@ -33,7 +33,7 @@ import {
   Radar,
   Scatter,
 } from "react-chartjs-2";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 function DashboardItem({
   id,
@@ -53,10 +53,16 @@ function DashboardItem({
   const [alignment, setAlignment] = useState("");
   const [showNotes, setNotesVisiblity] = useState(false);
   const [notes, setNotes] = useState({});
+  const [unsavedChanges, setUnsavedChanges] = useState(false);
+
   const style = {
     transition,
     transform: CSS.Transform.toString(transform),
   };
+
+  useEffect(() => {
+    setUnsavedChanges(true);
+  }, [height, width, showSQL, showNotes, notes, alignment, widgetTitle]);
 
   const widgetSettings = {
     viewQuery: showSQL,
@@ -110,6 +116,10 @@ function DashboardItem({
     }
   };
 
+  const handleSaveWidget = () => {
+    console.log("saved");
+  };
+
   return (
     <>
       <div
@@ -147,13 +157,19 @@ function DashboardItem({
           />
           <FontAwesomeIcon
             icon={faFloppyDisk}
-            className="p-1 ms-1 btn-green p-1 rounded"
+            className={`p-1 ms-1 ${
+              unsavedChanges ? "btn btn-danger" : "btn-green"
+            } p-1 rounded`}
             data-bs-toggle="tooltip"
             data-bs-placement="top"
-            title="Edit the Widget"
-            style={{ cursor: "pointer" }}
+            title={
+              unsavedChanges ? "Your changes are saved" : "Save the Widget"
+            }
+            style={{ cursor: unsavedChanges ? "pointer" : "not-allowed" }}
             onClick={(e) => {
-              // SetEditWidgetVisiblity(true);
+              if (unsavedChanges) {
+                handleSaveWidget();
+              }
             }}
           />
         </div>
