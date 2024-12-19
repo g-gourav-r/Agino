@@ -388,6 +388,7 @@ const VisualizeData = ({ DB_response, ChatLogId, query }) => {
         title: dashboardTitle,
         type: "graph",
         graphoption: {
+          order: -1, 
           coOrdinate: {
             X: selectedX,
             Y1: selectedY1,

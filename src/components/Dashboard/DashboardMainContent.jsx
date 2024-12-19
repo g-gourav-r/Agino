@@ -10,11 +10,12 @@ import {
 import { useState } from "react";
 import DashboardColumns from "./DashboardUtilityComponents/DashboardColumns";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import createApiCall, { GET } from "../api/api";
+import createApiCall, { GET, PUT } from "../api/api";
 import { useEffect } from "react";
 import {
   faDatabase,
   faExclamationCircle,
+  faSave,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MutatingDotsLoader from "../Loaders/MutatingDots";
@@ -29,6 +30,7 @@ function DashboardMainContent() {
 
   const connectedDataSourcesApi = createApiCall("connecteddatabases", GET);
   const fetchDashboardApi = createApiCall("dashboardAnalytics/{id}", GET);
+  const updateDashboardApi = createApiCall("dashboardAnalytics", PUT);
 
   const appData = JSON.parse(localStorage.getItem("appData"));
   const token = appData?.token;
@@ -70,6 +72,13 @@ function DashboardMainContent() {
     })
       .then((response) => {
         setLoading(false);
+        // Sort by order, with -1 (new items) coming last
+        const sortedContent = response.data.sort((a, b) => {
+          if (a.graphoption.order === -1) return 1;
+          if (b.graphoption.order === -1) return -1;
+          return a.graphoption.order - b.graphoption.order;
+        });
+
         setDashboardContent(processData(response.data));
       })
       .catch((error) => {
@@ -126,11 +135,16 @@ function DashboardMainContent() {
 
       return {
         id: _id,
+        database: dataSources,
         title: title,
         query: query,
-        graphType: graphType,
-        graphOptions: graphoption.options,
-        graphData: graphData,
+        graphoption: graphoption,
+        type: "graph",
+        widgetData: {
+          graphType: graphType,
+          graphOptions: graphoption.options,
+          graphData: graphData,
+        },
       };
     });
 
@@ -138,16 +152,25 @@ function DashboardMainContent() {
   };
 
   const handleDragEnd = (event) => {
-    setChangeInState(true);
     const { active, over } = event;
-    if (active.id === over.id) return;
+    if (!over || active.id === over.id) return;
 
     setDashboardContent((content) => {
       const originalPos = content.findIndex((item) => item.id === active.id);
       const newPos = content.findIndex((item) => item.id === over.id);
 
-      return arrayMove(content, originalPos, newPos);
+      const updatedContent = arrayMove(content, originalPos, newPos);
+
+      return updatedContent.map((item, index) => ({
+        ...item,
+        graphoption: {
+          ...item.graphoption,
+          order: index,
+        },
+      }));
     });
+
+    setChangeInState(true);
   };
 
   const sensors = useSensors(
@@ -156,15 +179,48 @@ function DashboardMainContent() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
+  const handleSave = () => {
+    // Map each widget into the required structure for the API
+    const updatedWidgets = dashboardContent.map((item) => ({
+      id: item.id, // Widget ID
+      database: currentDataSource, // The currently selected data source
+      title: item.title,
+      query: item.query,
+      graphoption: item.graphoption, // Includes the updated order
+      type: item.type, // e.g., "graph" or "metrics"
+    }));
+
+    updateDashboardApi({
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: updatedWidgets,
+    })
+      .then(() => {
+        toast.success("Dashboard saved successfully!");
+        setChangeInState(false);
+      })
+      .catch((error) => {
+        console.error("Error saving dashboard:", error);
+        toast.error("Failed to save dashboard!");
+      });
+  };
+
   return (
     <>
       <ToastContainer />
       {/*Header */}
       <div>
         <div className="bg-light m-1 p-2 border rounded d-flex align-items-center flex-wrap">
-          <div className="status">
+          <div className="status d-flex align-items-center">
             {stateChange && (
               <>
+                <FontAwesomeIcon
+                  icon={faSave}
+                  className="btn-green p-1 rounded"
+                  onClick={handleSave}
+                />
                 <FontAwesomeIcon
                   icon={faExclamationCircle}
                   className="text-danger mx-2"
