@@ -600,6 +600,7 @@ const VisualizeData = ({ DB_response, ChatLogId, query }) => {
         >
           <FontAwesomeIcon className="mx-2" icon={faCopy} /> Copy Table
         </button>
+
         <button
           className="btn-green p-1 rounded m-2 text-start"
           onClick={handleDownloadTable}

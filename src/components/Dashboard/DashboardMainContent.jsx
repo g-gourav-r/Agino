@@ -21,6 +21,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MutatingDotsLoader from "../Loaders/MutatingDots";
 import { toast, ToastContainer } from "react-toastify";
 
+
 function DashboardMainContent() {
   const [dataSources, setDataSources] = useState();
   const [loading, setLoading] = useState(false);
@@ -79,6 +80,7 @@ function DashboardMainContent() {
         });
 
         setDashboardContent(processData(response.data, id));
+
       })
       .catch((error) => {
         setLoading(false);
@@ -267,12 +269,14 @@ function DashboardMainContent() {
             collisionDetection={closestCorners}
           >
             <DashboardColumns widgets={dashboardContent} />
+
           </DndContext>
         ) : (
           <div className="d-flex flex-column justify-content-center align-items-center flex-grow-1 h-100">
             <h2>
               Monitor your <span className="text-green">KPIs</span> with{" "}
               <span className="text-green">Agino</span>
+
             </h2>
             <ul className="mt-2">
               <li>
