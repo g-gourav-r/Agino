@@ -10,21 +10,28 @@ import {
 import { useState } from "react";
 import DashboardColumns from "./DashboardUtilityComponents/DashboardColumns";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import createApiCall, { GET } from "../api/api";
+import createApiCall, { GET, PUT } from "../api/api";
 import { useEffect } from "react";
-import { faDatabase } from "@fortawesome/free-solid-svg-icons";
+import {
+  faDatabase,
+  faExclamationCircle,
+  faSave,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MutatingDotsLoader from "../Loaders/MutatingDots";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
+
 
 function DashboardMainContent() {
   const [dataSources, setDataSources] = useState();
   const [loading, setLoading] = useState(false);
   const [currentDataSource, setCurrentDataSource] = useState("");
-  const [dashboardContent, setDashboardContent] = useState({});
+  const [dashboardContent, setDashboardContent] = useState([]);
+  const [stateChange, setChangeInState] = useState(false);
 
   const connectedDataSourcesApi = createApiCall("connecteddatabases", GET);
   const fetchDashboardApi = createApiCall("dashboardAnalytics/{id}", GET);
+  const updateDashboardApi = createApiCall("dashboardAnalytics", PUT);
 
   const appData = JSON.parse(localStorage.getItem("appData"));
   const token = appData?.token;
@@ -53,7 +60,7 @@ function DashboardMainContent() {
 
   // Fetch Dashboards
   const handleFetchDashboards = (id) => {
-    setDashboardContent({});
+    setDashboardContent([]);
     setLoading(true);
     fetchDashboardApi({
       headers: {
@@ -66,8 +73,14 @@ function DashboardMainContent() {
     })
       .then((response) => {
         setLoading(false);
-        setDashboardContent(response.data);
-        toast.info(response.data);
+        const sortedContent = response.data.sort((a, b) => {
+          if (a.graphoption.order === -1) return 1;
+          if (b.graphoption.order === -1) return -1;
+          return a.graphoption.order - b.graphoption.order;
+        });
+
+        setDashboardContent(processData(response.data, id));
+
       })
       .catch((error) => {
         setLoading(false);
@@ -75,25 +88,80 @@ function DashboardMainContent() {
       });
   };
 
-  const [tasks, setTasks] = useState([
-    { id: 1, title: "Add tests 1" },
-    { id: 2, title: "Add tests 2" },
-    { id: 3, title: "Add tests 3" },
-  ]);
+  // useEffect(() => {
+  //   if (dashboardContent.length > 0) {
+  //     console.log("Updated Dashboard Content:", dashboardContent);
+  //   }
+  // }, [dashboardContent]);
 
-  const getTaskPos = (id) => tasks.findIndex((task) => task.id === id);
+  // Helper function to convert the API Response
+  const processData = (apiResponse, dataSource) => {
+    return apiResponse.map((item) => {
+      const { graphoption, data, _id, query, title } = item;
+
+      const xAxis = graphoption.coOrdinate.X;
+      const y1Axis = graphoption.coOrdinate.Y1;
+      const y2Axis = graphoption.coOrdinate.Y2 || "";
+
+      const graphData = {
+        labels: [],
+        datasets: [
+          {
+            label: y1Axis,
+            data: [],
+            borderColor: "rgba(75, 192, 192, 1)",
+            backgroundColor: "rgba(75, 192, 192, 0.2)",
+            fill: false,
+          },
+        ],
+      };
+
+      data.forEach((entry) => {
+        graphData.labels.push(entry[xAxis]);
+        graphData.datasets[0].data.push(entry[y1Axis]);
+
+        if (y2Axis) {
+          graphData.datasets.push({
+            label: y2Axis,
+            data: entry[y2Axis] || [],
+            borderColor: "rgba(153, 102, 255, 1)",
+            backgroundColor: "rgba(153, 102, 255, 0.2)",
+            fill: false,
+          });
+        }
+      });
+
+      return {
+        id: _id,
+        database: dataSource,
+        title: title,
+        query: query,
+        graphoption: graphoption,
+        graphData: graphData,
+      };
+    });
+  };
 
   const handleDragEnd = (event) => {
     const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
-    if (active.id === over.id) return;
+    setDashboardContent((content) => {
+      const originalPos = content.findIndex((item) => item.id === active.id);
+      const newPos = content.findIndex((item) => item.id === over.id);
 
-    setTasks((tasks) => {
-      const originalPos = getTaskPos(active.id);
-      const newPos = getTaskPos(over.id);
+      const updatedContent = arrayMove(content, originalPos, newPos);
 
-      return arrayMove(tasks, originalPos, newPos);
+      return updatedContent.map((item, index) => ({
+        ...item,
+        graphoption: {
+          ...item.graphoption,
+          order: index,
+        },
+      }));
     });
+
+    setChangeInState(true);
   };
 
   const sensors = useSensors(
@@ -102,11 +170,57 @@ function DashboardMainContent() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
+  const handleSave = () => {
+    // Map each widget into the required structure for the API
+    const updatedWidgets = dashboardContent.map((item) => ({
+      id: item.id, // Widget ID
+      database: currentDataSource, // The currently selected data source
+      title: item.title,
+      query: item.query,
+      graphoption: item.graphoption, // Includes the updated order
+      type: item.type, // e.g., "graph" or "metrics"
+    }));
+
+    updateDashboardApi({
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: updatedWidgets,
+    })
+      .then(() => {
+        toast.success("Dashboard saved successfully!");
+        setChangeInState(false);
+      })
+      .catch((error) => {
+        console.error("Error saving dashboard:", error);
+        toast.error("Failed to save dashboard!");
+      });
+  };
+
   return (
     <>
+      <ToastContainer />
       {/*Header */}
       <div>
         <div className="bg-light m-1 p-2 border rounded d-flex align-items-center flex-wrap">
+          <div className="status d-flex align-items-center">
+            {stateChange && (
+              <>
+                <FontAwesomeIcon
+                  icon={faSave}
+                  className="btn-green p-1 rounded"
+                  onClick={handleSave}
+                />
+                <FontAwesomeIcon
+                  icon={faExclamationCircle}
+                  className="text-danger mx-2"
+                />
+                <span className="text-muted">Changes have not been saved</span>
+              </>
+            )}
+          </div>
+
           {dataSources && dataSources.length > 0 ? (
             <>
               <FontAwesomeIcon className="ms-auto me-2" icon={faDatabase} />
@@ -154,28 +268,31 @@ function DashboardMainContent() {
             onDragEnd={handleDragEnd}
             collisionDetection={closestCorners}
           >
-            <DashboardColumns tasks={tasks} />
+            <DashboardColumns widgets={dashboardContent} />
+
           </DndContext>
         ) : (
           <div className="d-flex flex-column justify-content-center align-items-center flex-grow-1 h-100">
             <h2>
-              Monitor your <span class="text-green">KPIs</span> with{" "}
-              <span class="text-green">Agino</span>
+              Monitor your <span className="text-green">KPIs</span> with{" "}
+              <span className="text-green">Agino</span>
+
             </h2>
             <ul className="mt-2">
               <li>
                 To create a dashboard, start a new{" "}
-                <span class="text-green">chat</span>.
+                <span className="text-green">chat</span>.
               </li>
               <li>
-                Click on "<span class="text-green">Visualize Data</span>" to
-                generate <span class="text-green">graphs</span>.
+                Click on "<span className="text-green">Visualize Data</span>" to
+                generate <span className="text-green">graphs</span>.
               </li>
               <li>
-                Select your desired <span class="text-green">graph</span>.
+                Select your desired <span className="text-green">graph</span>.
               </li>
               <li>
-                Then add it to the <span class="text-green">dashboard</span>.
+                Then add it to the <span className="text-green">dashboard</span>
+                .
               </li>
             </ul>
           </div>
