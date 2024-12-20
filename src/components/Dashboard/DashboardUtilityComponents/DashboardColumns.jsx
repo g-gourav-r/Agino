@@ -13,10 +13,10 @@ function DashboardColumns({ widgets }) {
             <DashboardItem
               id={widget.id}
               key={widget.id}
+              dataSource={widget.database}
               title={widget.title}
               query={widget.query}
-              graphType={widget.graphType}
-              graphOptions={widget.graphOptions}
+              graphOptions={widget.graphoption}
               graphData={widget.graphData}
             />
           );

@@ -10,15 +10,17 @@ import {
 import { useState } from "react";
 import DashboardColumns from "./DashboardUtilityComponents/DashboardColumns";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import createApiCall, { GET } from "../api/api";
+import createApiCall, { GET, PUT } from "../api/api";
 import { useEffect } from "react";
 import {
   faDatabase,
   faExclamationCircle,
+  faSave,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MutatingDotsLoader from "../Loaders/MutatingDots";
 import { toast, ToastContainer } from "react-toastify";
+
 
 function DashboardMainContent() {
   const [dataSources, setDataSources] = useState();
@@ -29,6 +31,7 @@ function DashboardMainContent() {
 
   const connectedDataSourcesApi = createApiCall("connecteddatabases", GET);
   const fetchDashboardApi = createApiCall("dashboardAnalytics/{id}", GET);
+  const updateDashboardApi = createApiCall("dashboardAnalytics", PUT);
 
   const appData = JSON.parse(localStorage.getItem("appData"));
   const token = appData?.token;
@@ -70,7 +73,14 @@ function DashboardMainContent() {
     })
       .then((response) => {
         setLoading(false);
-        setDashboardContent(processData(response.data));
+        const sortedContent = response.data.sort((a, b) => {
+          if (a.graphoption.order === -1) return 1;
+          if (b.graphoption.order === -1) return -1;
+          return a.graphoption.order - b.graphoption.order;
+        });
+
+        setDashboardContent(processData(response.data, id));
+
       })
       .catch((error) => {
         setLoading(false);
@@ -85,15 +95,13 @@ function DashboardMainContent() {
   // }, [dashboardContent]);
 
   // Helper function to convert the API Response
-  const processData = (apiResponse) => {
-    const chartData = apiResponse.map((item) => {
+  const processData = (apiResponse, dataSource) => {
+    return apiResponse.map((item) => {
       const { graphoption, data, _id, query, title } = item;
 
       const xAxis = graphoption.coOrdinate.X;
       const y1Axis = graphoption.coOrdinate.Y1;
       const y2Axis = graphoption.coOrdinate.Y2 || "";
-
-      const graphType = graphoption.graphType || "line";
 
       const graphData = {
         labels: [],
@@ -109,10 +117,9 @@ function DashboardMainContent() {
       };
 
       data.forEach((entry) => {
-        const xValue = entry[xAxis];
-        const y1Value = entry[y1Axis];
-        graphData.labels.push(xValue);
-        graphData.datasets[0].data.push(y1Value);
+        graphData.labels.push(entry[xAxis]);
+        graphData.datasets[0].data.push(entry[y1Axis]);
+
         if (y2Axis) {
           graphData.datasets.push({
             label: y2Axis,
@@ -126,28 +133,35 @@ function DashboardMainContent() {
 
       return {
         id: _id,
+        database: dataSource,
         title: title,
         query: query,
-        graphType: graphType,
-        graphOptions: graphoption.options,
+        graphoption: graphoption,
         graphData: graphData,
       };
     });
-
-    return chartData;
   };
 
   const handleDragEnd = (event) => {
-    setChangeInState(true);
     const { active, over } = event;
-    if (active.id === over.id) return;
+    if (!over || active.id === over.id) return;
 
     setDashboardContent((content) => {
       const originalPos = content.findIndex((item) => item.id === active.id);
       const newPos = content.findIndex((item) => item.id === over.id);
 
-      return arrayMove(content, originalPos, newPos);
+      const updatedContent = arrayMove(content, originalPos, newPos);
+
+      return updatedContent.map((item, index) => ({
+        ...item,
+        graphoption: {
+          ...item.graphoption,
+          order: index,
+        },
+      }));
     });
+
+    setChangeInState(true);
   };
 
   const sensors = useSensors(
@@ -156,15 +170,48 @@ function DashboardMainContent() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
+  const handleSave = () => {
+    // Map each widget into the required structure for the API
+    const updatedWidgets = dashboardContent.map((item) => ({
+      id: item.id, // Widget ID
+      database: currentDataSource, // The currently selected data source
+      title: item.title,
+      query: item.query,
+      graphoption: item.graphoption, // Includes the updated order
+      type: item.type, // e.g., "graph" or "metrics"
+    }));
+
+    updateDashboardApi({
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: updatedWidgets,
+    })
+      .then(() => {
+        toast.success("Dashboard saved successfully!");
+        setChangeInState(false);
+      })
+      .catch((error) => {
+        console.error("Error saving dashboard:", error);
+        toast.error("Failed to save dashboard!");
+      });
+  };
+
   return (
     <>
       <ToastContainer />
       {/*Header */}
       <div>
         <div className="bg-light m-1 p-2 border rounded d-flex align-items-center flex-wrap">
-          <div className="status">
+          <div className="status d-flex align-items-center">
             {stateChange && (
               <>
+                <FontAwesomeIcon
+                  icon={faSave}
+                  className="btn-green p-1 rounded"
+                  onClick={handleSave}
+                />
                 <FontAwesomeIcon
                   icon={faExclamationCircle}
                   className="text-danger mx-2"
@@ -222,12 +269,14 @@ function DashboardMainContent() {
             collisionDetection={closestCorners}
           >
             <DashboardColumns widgets={dashboardContent} />
+
           </DndContext>
         ) : (
           <div className="d-flex flex-column justify-content-center align-items-center flex-grow-1 h-100">
             <h2>
               Monitor your <span className="text-green">KPIs</span> with{" "}
               <span className="text-green">Agino</span>
+
             </h2>
             <ul className="mt-2">
               <li>
