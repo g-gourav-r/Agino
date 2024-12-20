@@ -10,7 +10,8 @@ import Heading from "@tiptap/extension-heading";
 import Paragraph from "@tiptap/extension-paragraph";
 import Text from "@tiptap/extension-text";
 import TextAlign from "@tiptap/extension-text-align";
-import createApiCall, { PUT } from "../../api/api";
+import createApiCall, { PUT, DELETE } from "../../api/api";
+import { ToastContainer, toast } from "react-toastify";
 import {
   faAlignCenter,
   faAlignLeft,
@@ -22,6 +23,7 @@ import {
   faPencil,
   faScrewdriverWrench,
   faUpDownLeftRight,
+  faTrashCan,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   Line,
@@ -54,13 +56,17 @@ function DashboardItem({
     graphOptions.widgetSettings.width
   );
   const [widgetTitle, setWidgetTitle] = useState(title);
-  const [alignment, setAlignment] = useState("");
+  const [alignment, setAlignment] = useState(graphOptions.widgetSettings.graphAlignment);
   const [showNotes, setNotesVisiblity] = useState(false);
   const [notes, setNotes] = useState({});
   const [unsavedChanges, setUnsavedChanges] = useState(false);
+  const [deleteWidgetModal, setDeleteWidgetModal] = useState(false);
   const isFirstRender = useRef(true);
+  const [confirmationText, setConfirmationText] = useState("");
+  const [canDelete, setCanDelete] = useState(false);
 
   const updateWidgetApi = createApiCall("dashboardAnalytics", PUT);
+  const deleteWidgetApi = createApiCall("dashboardAnalytics/{id}", DELETE);
 
   const appData = JSON.parse(localStorage.getItem("appData"));
   const token = appData?.token;
@@ -79,7 +85,8 @@ function DashboardItem({
       widgetTitle !== title ||
       graphHeight !== graphOptions.widgetSettings.height ||
       graphWidth !== graphOptions.widgetSettings.width ||
-      showSQL !== graphOptions.widgetSettings.viewQuery
+      showSQL !== graphOptions.widgetSettings.viewQuery ||
+      alignment !== graphOptions.widgetSettings.graphAlignment
     ) {
       setUnsavedChanges(true);
     }
@@ -100,6 +107,7 @@ function DashboardItem({
       width: graphWidth,
       viewNotes: showNotes,
       notesContent: notes,
+      graphAlignment: alignment,
     };
 
     // Return updated graphoption with new widget settings
@@ -122,8 +130,7 @@ function DashboardItem({
       graphoption: updatedData,
       type: "graph",
     };
-
-    console.log(body);
+    const updatingWidgetToast = toast.loading("Updating Widget...", {autoClose: 1000});
     updateWidgetApi({
       headers: {
         Authorization: `Bearer ${token}`,
@@ -132,10 +139,24 @@ function DashboardItem({
       body: body,
     })
       .then((response) => {
-        console.log("Widget saved successfully!");
+        setUnsavedChanges(false);
+    
+        // Update the toast to success
+        toast.update(updatingWidgetToast, {
+          render: "Widget updated successfully!",
+          type: "success",
+          isLoading: false,
+          autoClose: 1000, // Close after 1 second
+        });
       })
       .catch((error) => {
-        console.error("Error saving widget:", error);
+        // Update the toast to error
+        toast.update(updatingWidgetToast, {
+          render: "Failed to update Widget",
+          type: "error",
+          isLoading: false,
+          autoClose: 1000, // Close after 1 second
+        });
       });
   };
 
@@ -180,11 +201,56 @@ function DashboardItem({
     }
   };
 
+    // Handle input change and check if the input matches "Delete"
+    const handleInputChange = (e) => {
+      const value = e.target.value;
+      setConfirmationText(value);
+  
+      // Check if input is exactly "Delete"
+      if (value.toLowerCase() === "delete") {
+        setCanDelete(true);
+      } else {
+        setCanDelete(false);
+      }
+    };
+
+  const handleDelete = () => {
+
+    const deleteWidgetToast = toast.loading("Deleting Widget...", {autoClose: 1000});
+    if (canDelete) {
+      deleteWidgetApi({
+        headers:{
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        pathVariables: {
+          id: id,
+        },
+      }).then((response) => {
+        toast.update(deleteWidgetToast, {
+          render: "Widget deleted successfully!",
+          type: "success",
+          isLoading: false,
+          autoClose: 1000,
+        });
+      }).catch((error) => {
+        toast.update(deleteWidgetToast, {
+          render: "Failed to delete Widget",
+          type: "error",
+          isLoading: false,
+          autoClose: 1000,
+        });
+      });
+      // Close the modal after deletion (optional)
+      setDeleteWidgetModal(false);
+    }
+  };
+
   return (
     <>
       <div
         ref={setNodeRef}
-        className="widget card shadow-sm bg-light rounded-3 mb-4 p-2"
+        className="widget card shadow-sm bg-white rounded-3 mb-4 p-2"
         style={style}
       >
         {/* Card Header */}
@@ -195,7 +261,7 @@ function DashboardItem({
             {...attributes}
             style={{ cursor: "grab" }}
             aria-label="Drag to reorder"
-            className="border rounded card-title text-center flex-grow-1 m-0 p-1"
+            className="border rounded shadow-sm card-title text-center flex-grow-1 m-0 p-1"
             data-bs-toggle="tooltip"
             data-bs-placement="top"
             title="Drag the card by the title"
@@ -203,7 +269,7 @@ function DashboardItem({
             {widgetTitle}
           </h5>
 
-          {/* Movable Icon */}
+          {/* Edit Icon */}
           <FontAwesomeIcon
             icon={faPencil}
             className="p-1 ms-1 btn-green p-1 rounded"
@@ -215,6 +281,7 @@ function DashboardItem({
               SetEditWidgetVisiblity(true);
             }}
           />
+          {/* Save Icon */}
           <FontAwesomeIcon
             icon={faFloppyDisk}
             className={`p-1 ms-1 ${
@@ -232,12 +299,23 @@ function DashboardItem({
               }
             }}
           />
+          {/* Delete Icon */}
+          <FontAwesomeIcon
+            icon={faTrashCan}
+            className="p-1 ms-1 btn btn-danger p-1 rounded"
+            data-bs-toggle="tooltip"
+            data-bs-placement="top"
+            title="Delete the Widget"
+            onClick={(e) => {
+              setDeleteWidgetModal(true);
+            }}
+          />
         </div>
         <div className="d-flex justify-content-between align-items-center mb-3">
           {/* Draggable Title with Tooltip */}
           {showSQL && (
             <pre
-              className="bg-white rounded p-1 mb-0 w-100"
+              className="bg-dark text-white border rounded p-1 mb-0 w-100"
               style={{
                 fontSize: "0.9rem",
                 overflowX: "auto",
@@ -256,7 +334,7 @@ function DashboardItem({
             minConstraints={[300, 200]}
             maxConstraints={[1200, 800]}
             resizeHandles={["se"]}
-            className="border rounded bg-white p-1"
+            className="border rounded bg-white p-3"
             onResizeStop={(event, { size }) => {
               setGraphHeight(size.height);
               setGraphWidth(size.width);
@@ -445,6 +523,7 @@ function DashboardItem({
                         id="show-sql-query"
                         className="form-check-input"
                         onChange={(e) => setShowSQL(e.target.checked)}
+                        value={showSQL}
                       />
                     </div>
                   </div>
@@ -475,6 +554,86 @@ function DashboardItem({
               </div>
             </div>
           </div>
+        </>
+      )}
+      {deleteWidgetModal && (
+        <>
+          {/* Modal Backdrop */}
+          <div
+            className="modal-backdrop opacity-50 rounded"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+            }}
+          ></div>
+
+          {/* Modal Content */}
+          <div className="modal show d-block" tabIndex="-1">
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content bg-white rounded p-3">
+          {/* Modal Header */}
+          <div className="modal-header">
+            <h5 className="modal-title">
+              <FontAwesomeIcon className="mx-2" icon={faTrashCan} />
+              Delete <span className="text-green">Widget</span>
+            </h5>
+            <button
+              type="button"
+              className="btn-close"
+              aria-label="Close"
+              onClick={() => {
+                setDeleteWidgetModal(false);
+              }}
+            ></button>
+          </div>
+
+          {/* Modal Body */}
+          <div className="modal-body">
+            {/* Message */}
+            <p>
+              Do you really wish to delete{" "}
+              <span className="text-green">{title}</span> widget?
+            </p>
+            <p>
+              Type{" "}
+              <span className="text-danger">Delete</span> in the box below to
+              confirm
+            </p>
+
+            {/* Input Field for Confirmation */}
+            <input
+              type="text"
+              className="form-control"
+              value={confirmationText}
+              onChange={handleInputChange}
+              placeholder="Type 'Delete' to confirm"
+            />
+          </div>
+
+          {/* Modal Footer */}
+          <div className="modal-footer">
+            <button
+              type="button"
+              className="btn btn-danger"
+              onClick={handleDelete}
+              disabled={!canDelete} // Disable if input doesn't match "Delete"
+            >
+              Confirm Deletion
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setDeleteWidgetModal(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
         </>
       )}
     </>
