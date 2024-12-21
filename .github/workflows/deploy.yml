@@ -49,11 +49,20 @@ jobs:
       - name: Set S3 bucket based on branch
         id: set_bucket
         run: |
-          if [ "${GITHUB_REF##*/}" == "staging" ]; then
+          if [ "${{ github.ref_name }}" == "staging" ]; then
             echo "S3_BUCKET=${{ secrets.AWS_S3_BUCKET_STAGING }}" >> $GITHUB_ENV
-          else
+            echo "BUCKET_ENVIRONMENT=staging" >> $GITHUB_ENV
+          elif [ "${{ github.ref_name }}" == "production" ]; then
             echo "S3_BUCKET=${{ secrets.AWS_S3_BUCKET_PRODUCTION }}" >> $GITHUB_ENV
+            echo "BUCKET_ENVIRONMENT=production" >> $GITHUB_ENV
+          else
+            echo "Error: Unsupported branch ${GITHUB_REF}" >&2
+            exit 1
           fi
+
+      - name: Log the S3 bucket
+        run: |
+          echo "The S3 bucket environment is set to: ${{ env.BUCKET_ENVIRONMENT }}"
 
       - name: Upload to S3
         uses: jakejarvis/s3-sync-action@master
@@ -65,6 +74,6 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Log the S3 bucket
+      - name: Log the uploaded S3 bucket
         run: |
-          echo "The changes have been uploaded to the S3 bucket: ${{ env.S3_BUCKET }}"
+          echo "The changes have been uploaded to the S3 bucket corresponding to: ${{ env.BUCKET_ENVIRONMENT }}"
