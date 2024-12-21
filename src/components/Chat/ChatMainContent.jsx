@@ -132,93 +132,95 @@ function ChatMainContent({ selectedChatId }) {
     }
   }, [selectedChatId, sessionId]);
 
-  const handleNewMessage = () => {
+  const handleNewMessage = (message = null) => {
+    const textToSend = message || chat.trim();
+
     if (!selectedDataSource) {
       toast.error("Please select a Data Source!", { autoClose: 500 });
-    } else {
-      if (chat.trim().length > 1) {
-        const newMessage = {
-          message: [{ human: chat }],
-          context: {},
-        };
+      return;
+    }
 
-        setMessages((prevMessages) => [...prevMessages, newMessage]);
-        setLoadingMessages((prevLoading) => [...prevLoading, chat]);
+    if (textToSend.length > 1) {
+      const newMessage = {
+        message: [{ human: textToSend }],
+        context: {},
+      };
 
-        setChat("");
-        const body = {
-          message: chat,
-          database: selectedDataSource,
-          psid: psid,
-          ...(sessionId ? { sessionId: sessionId } : {}),
-        };
+      setMessages((prevMessages) => [...prevMessages, newMessage]);
+      setLoadingMessages((prevLoading) => [...prevLoading, textToSend]);
+      setChat(""); // Clear the input if this is a manual send
 
-        newMessageApi({
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: body,
-        })
-          .then((response) => {
-            const data = response;
+      const body = {
+        message: textToSend,
+        database: selectedDataSource,
+        psid: psid,
+        ...(sessionId ? { sessionId: sessionId } : {}),
+      };
 
-            if (data) {
-              const appData = JSON.parse(localStorage.getItem("appData"));
-              const updatedAppData = {
-                ...appData,
-                chatData: {
-                  ...appData.chatData,
-                  sessionID: data.sessionId,
-                },
-              };
-              localStorage.setItem("appData", JSON.stringify(updatedAppData));
+      newMessageApi({
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: body,
+      })
+        .then((response) => {
+          const data = response;
 
-              const responseMessage = {
-                message: [{ human: chat }],
-                context: {
-                  agent: data.agent || "No agent response",
-                  SQL_query: data.SQL_query || "",
-                  query_description: data.query_description || "",
-                  followup: data.followup ? [data.followup] : [],
-                  DB_response: data.DB_response || [],
-                  error: data.error || "", // Include error message if present
-                  chatLogID: data.chatLogId,
-                },
-              };
+          if (data) {
+            const appData = JSON.parse(localStorage.getItem("appData"));
+            const updatedAppData = {
+              ...appData,
+              chatData: {
+                ...appData.chatData,
+                sessionID: data.sessionId,
+              },
+            };
+            localStorage.setItem("appData", JSON.stringify(updatedAppData));
 
-              setMessages((prevMessages) => [
-                ...prevMessages.slice(0, -1),
-                responseMessage,
-              ]);
-              setLoadingMessages((prevLoading) =>
-                prevLoading.filter((msg) => msg !== chat)
-              );
-            } else {
-              toast.error("Error: Missing response data.", { autoClose: 500 });
-              setLoadingMessages((prevLoading) =>
-                prevLoading.filter((msg) => msg !== chat)
-              );
-            }
-          })
-          .catch((error) => {
-            // Handle API call failure
+            const responseMessage = {
+              message: [{ human: textToSend }],
+              context: {
+                agent: data.agent || "No agent response",
+                SQL_query: data.SQL_query || "",
+                query_description: data.query_description || "",
+                followup: data.followup ? [data.followup] : [],
+                DB_response: data.DB_response || [],
+                error: data.error || "",
+                chatLogID: data.chatLogId,
+              },
+            };
+
             setMessages((prevMessages) => [
               ...prevMessages.slice(0, -1),
-              {
-                message: [{ human: chat }],
-                context: {
-                  error: "Failed to send the message to the server.",
-                },
-              },
+              responseMessage,
             ]);
             setLoadingMessages((prevLoading) =>
-              prevLoading.filter((msg) => msg !== chat)
+              prevLoading.filter((msg) => msg !== textToSend)
             );
-            toast.error("Error sending message", { autoClose: 500 });
-            console.error("Error sending message:", error);
-          });
-      }
+          } else {
+            toast.error("Error: Missing response data.", { autoClose: 500 });
+            setLoadingMessages((prevLoading) =>
+              prevLoading.filter((msg) => msg !== textToSend)
+            );
+          }
+        })
+        .catch((error) => {
+          setMessages((prevMessages) => [
+            ...prevMessages.slice(0, -1),
+            {
+              message: [{ human: textToSend }],
+              context: {
+                error: "Failed to send the message to the server.",
+              },
+            },
+          ]);
+          setLoadingMessages((prevLoading) =>
+            prevLoading.filter((msg) => msg !== textToSend)
+          );
+          toast.error("Error sending message", { autoClose: 500 });
+          console.error("Error sending message:", error);
+        });
     }
   };
 
@@ -419,8 +421,7 @@ function ChatMainContent({ selectedChatId }) {
                                                     : "btn-black"
                                                 } rounded w-100 p-2 d-flex align-items-center justify-content-center`}
                                                 onClick={() => {
-                                                  setChat(item);
-                                                  handleNewMessage();
+                                                  handleNewMessage(item); // Pass the follow-up message
                                                 }}
                                               >
                                                 {item}
@@ -483,11 +484,16 @@ function ChatMainContent({ selectedChatId }) {
                   type="text"
                   value={chat}
                   onChange={(e) => setChat(e.target.value)}
-                  onKeyDown={handleKeyDown}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !isHistoricChat) {
+                      e.preventDefault();
+                      handleNewMessage(); // Call without parameter for manual send
+                    }
+                  }}
                   className="w-100 border rounded p-1"
                   placeholder="Start typing here"
                 />
-                <span onClick={handleNewMessage}>
+                <span onClick={() => handleNewMessage()}>
                   <FontAwesomeIcon
                     className="fx2 sendButton p-2 me-1"
                     icon={faPaperPlane}
