@@ -228,7 +228,7 @@ function DashboardItem({
         },
       }).then((response) => {
         toast.update(deleteWidgetToast, {
-          render: "Widget deleted successfully!",
+          render: "Widget deleted successfully! Please refresh the page to see changes.",
           type: "success",
           isLoading: false,
           autoClose: 1000,
