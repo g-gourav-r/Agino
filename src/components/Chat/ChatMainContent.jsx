@@ -321,7 +321,7 @@ function ChatMainContent({ selectedChatId }) {
                     <div key={idx}>
                       <div className="my-2 d-flex justify-content-end ms-auto">
                         <div
-                          className="chat-human bg-light shadow rounded text-wrap text-break text-sm p-1 p-md-2"
+                          className="chat-human bg-light shadow text-wrap text-break text-sm p-1 p-md-2"
                           style={{ maxWidth: "75%", width: "auto" }}
                         >
                           {dialogue.human}
@@ -347,7 +347,7 @@ function ChatMainContent({ selectedChatId }) {
                   ) : (
                     <div
                       className="ai shadow bg-white w-75 p-2"
-                      style={{ minHeight: "40vh", fontSize: "0.85rem" }}
+                      style={{fontSize: "0.85rem" }}
                     >
                       <Tabs
                         defaultActiveKey="agent"
