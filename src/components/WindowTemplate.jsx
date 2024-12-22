@@ -133,7 +133,7 @@ function WindowTemplate({ currentPage, sideBar, mainContent }) {
               </li>
               <li className="nav-item">
                 <a
-                  className={`px-2 nav-link user-select-none${
+                  className={`px-2 nav-link user-select-none ${
                     currentPage === "data-source" ? "active" : ""
                   }`}
                   onClick={() => navigate("/datasource")}
