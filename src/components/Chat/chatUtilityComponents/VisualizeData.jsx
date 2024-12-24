@@ -388,7 +388,7 @@ const VisualizeData = ({ DB_response, ChatLogId, query }) => {
         title: dashboardTitle,
         type: "graph",
         graphoption: {
-          order: -1, 
+          order: -1,
           coOrdinate: {
             X: selectedX,
             Y1: selectedY1,
@@ -396,6 +396,13 @@ const VisualizeData = ({ DB_response, ChatLogId, query }) => {
           },
           graphType: graphType,
           options: options,
+          widgetSettings: {
+            viewQuery: false,
+            height: 420,
+            width: 842,
+            viewNotes: false,
+            notesContent: {},
+          },
         },
       },
     })
@@ -593,6 +600,7 @@ const VisualizeData = ({ DB_response, ChatLogId, query }) => {
         >
           <FontAwesomeIcon className="mx-2" icon={faCopy} /> Copy Table
         </button>
+
         <button
           className="btn-green p-1 rounded m-2 text-start"
           onClick={handleDownloadTable}

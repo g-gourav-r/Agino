@@ -21,6 +21,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MutatingDotsLoader from "../Loaders/MutatingDots";
 import { toast, ToastContainer } from "react-toastify";
 
+
 function DashboardMainContent() {
   const [dataSources, setDataSources] = useState();
   const [loading, setLoading] = useState(false);
@@ -72,14 +73,14 @@ function DashboardMainContent() {
     })
       .then((response) => {
         setLoading(false);
-        // Sort by order, with -1 (new items) coming last
         const sortedContent = response.data.sort((a, b) => {
           if (a.graphoption.order === -1) return 1;
           if (b.graphoption.order === -1) return -1;
           return a.graphoption.order - b.graphoption.order;
         });
 
-        setDashboardContent(processData(response.data));
+        setDashboardContent(processData(response.data, id));
+
       })
       .catch((error) => {
         setLoading(false);
@@ -94,15 +95,13 @@ function DashboardMainContent() {
   // }, [dashboardContent]);
 
   // Helper function to convert the API Response
-  const processData = (apiResponse) => {
-    const chartData = apiResponse.map((item) => {
+  const processData = (apiResponse, dataSource) => {
+    return apiResponse.map((item) => {
       const { graphoption, data, _id, query, title } = item;
 
       const xAxis = graphoption.coOrdinate.X;
       const y1Axis = graphoption.coOrdinate.Y1;
       const y2Axis = graphoption.coOrdinate.Y2 || "";
-
-      const graphType = graphoption.graphType || "line";
 
       const graphData = {
         labels: [],
@@ -118,10 +117,9 @@ function DashboardMainContent() {
       };
 
       data.forEach((entry) => {
-        const xValue = entry[xAxis];
-        const y1Value = entry[y1Axis];
-        graphData.labels.push(xValue);
-        graphData.datasets[0].data.push(y1Value);
+        graphData.labels.push(entry[xAxis]);
+        graphData.datasets[0].data.push(entry[y1Axis]);
+
         if (y2Axis) {
           graphData.datasets.push({
             label: y2Axis,
@@ -135,20 +133,13 @@ function DashboardMainContent() {
 
       return {
         id: _id,
-        database: dataSources,
+        database: dataSource,
         title: title,
         query: query,
         graphoption: graphoption,
-        type: "graph",
-        widgetData: {
-          graphType: graphType,
-          graphOptions: graphoption.options,
-          graphData: graphData,
-        },
+        graphData: graphData,
       };
     });
-
-    return chartData;
   };
 
   const handleDragEnd = (event) => {
@@ -278,12 +269,14 @@ function DashboardMainContent() {
             collisionDetection={closestCorners}
           >
             <DashboardColumns widgets={dashboardContent} />
+
           </DndContext>
         ) : (
           <div className="d-flex flex-column justify-content-center align-items-center flex-grow-1 h-100">
             <h2>
               Monitor your <span className="text-green">KPIs</span> with{" "}
               <span className="text-green">Agino</span>
+
             </h2>
             <ul className="mt-2">
               <li>

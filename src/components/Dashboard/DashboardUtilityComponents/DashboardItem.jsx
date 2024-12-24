@@ -10,6 +10,7 @@ import Heading from "@tiptap/extension-heading";
 import Paragraph from "@tiptap/extension-paragraph";
 import Text from "@tiptap/extension-text";
 import TextAlign from "@tiptap/extension-text-align";
+import createApiCall, { PUT } from "../../api/api";
 import {
   faAlignCenter,
   faAlignLeft,
@@ -22,7 +23,6 @@ import {
   faScrewdriverWrench,
   faUpDownLeftRight,
 } from "@fortawesome/free-solid-svg-icons";
-
 import {
   Line,
   Bar,
@@ -39,21 +39,31 @@ function DashboardItem({
   id,
   title,
   query,
-  graphType,
   graphOptions,
+  dataSource,
   graphData,
 }) {
   const { attributes, setNodeRef, listeners, transform, transition } =
     useSortable({ id });
   const [editWidgetModal, SetEditWidgetVisiblity] = useState(false);
-  const [showSQL, setShowSQL] = useState(false);
-  const [graphHeight, setGraphHeight] = useState(300);
-  const [graphWidth, setGraphWidth] = useState(600);
+  const [showSQL, setShowSQL] = useState(graphOptions.widgetSettings.viewQuery);
+  const [graphHeight, setGraphHeight] = useState(
+    graphOptions.widgetSettings.height
+  );
+  const [graphWidth, setGraphWidth] = useState(
+    graphOptions.widgetSettings.width
+  );
   const [widgetTitle, setWidgetTitle] = useState(title);
   const [alignment, setAlignment] = useState("");
   const [showNotes, setNotesVisiblity] = useState(false);
   const [notes, setNotes] = useState({});
   const [unsavedChanges, setUnsavedChanges] = useState(false);
+  const isFirstRender = useRef(true);
+
+  const updateWidgetApi = createApiCall("dashboardAnalytics", PUT);
+
+  const appData = JSON.parse(localStorage.getItem("appData"));
+  const token = appData?.token;
 
   const style = {
     transition,
@@ -61,15 +71,72 @@ function DashboardItem({
   };
 
   useEffect(() => {
-    setUnsavedChanges(true);
-  }, [height, width, showSQL, showNotes, notes, alignment, widgetTitle]);
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    if (
+      widgetTitle !== title ||
+      graphHeight !== graphOptions.widgetSettings.height ||
+      graphWidth !== graphOptions.widgetSettings.width ||
+      showSQL !== graphOptions.widgetSettings.viewQuery
+    ) {
+      setUnsavedChanges(true);
+    }
+  }, [
+    graphHeight,
+    graphWidth,
+    showSQL,
+    showNotes,
+    notes,
+    alignment,
+    widgetTitle,
+  ]);
 
-  const widgetSettings = {
-    viewQuery: showSQL,
-    height: graphHeight,
-    width: graphWidth,
-    viewNotes: showNotes,
-    notesContent: notes,
+  const handleUpdateNewSettings = () => {
+    const updatedWidgetSettings = {
+      viewQuery: showSQL,
+      height: graphHeight,
+      width: graphWidth,
+      viewNotes: showNotes,
+      notesContent: notes,
+    };
+
+    // Return updated graphoption with new widget settings
+    return {
+      ...graphOptions,
+      widgetSettings: {
+        ...graphOptions.widgetSettings,
+        ...updatedWidgetSettings,
+      },
+    };
+  };
+
+  const handleSaveWidget = async () => {
+    const updatedData = handleUpdateNewSettings();
+    const body = {
+      id,
+      database: dataSource,
+      title: widgetTitle,
+      query,
+      graphoption: updatedData,
+      type: "graph",
+    };
+
+    console.log(body);
+    updateWidgetApi({
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: body,
+    })
+      .then((response) => {
+        console.log("Widget saved successfully!");
+      })
+      .catch((error) => {
+        console.error("Error saving widget:", error);
+      });
   };
 
   const editor = useEditor({
@@ -84,9 +151,6 @@ function DashboardItem({
       }),
     ],
     content: `
-      <p>
-        Hey, try to select some text here. There will popup a menu for selecting some inline styles. Remember: you have full control about content and styling of this menu.
-      </p>
     `,
     onUpdate: ({ editor }) => {
       setNotes(editor.getJSON());
@@ -94,30 +158,26 @@ function DashboardItem({
   });
 
   const renderGraph = () => {
-    switch (graphType) {
+    switch (graphOptions.graphType) {
       case "Line":
-        return <Line data={graphData} options={graphOptions} />;
+        return <Line data={graphData} options={graphOptions.options} />;
       case "Bar":
-        return <Bar data={graphData} options={graphOptions} />;
+        return <Bar data={graphData} options={graphOptions.options} />;
       case "Bubble":
-        return <Bubble data={graphData} options={graphOptions} />;
+        return <Bubble data={graphData} options={graphOptions.options} />;
       case "Doughnut":
-        return <Doughnut data={graphData} options={graphOptions} />;
+        return <Doughnut data={graphData} options={graphOptions.options} />;
       case "Pie":
-        return <Pie data={graphData} options={graphOptions} />;
+        return <Pie data={graphData} options={graphOptions.options} />;
       case "PolarArea":
-        return <PolarArea data={graphData} options={graphOptions} />;
+        return <PolarArea data={graphData} options={graphOptions.options} />;
       case "Radar":
-        return <Radar data={graphData} options={graphOptions} />;
+        return <Radar data={graphData} options={graphOptions.options} />;
       case "Scatter":
-        return <Scatter data={graphData} options={graphOptions} />;
+        return <Scatter data={graphData} options={graphOptions.options} />;
       default:
-        return <Line data={graphData} options={graphOptions} />;
+        return <Line data={graphData} options={graphOptions.options} />;
     }
-  };
-
-  const handleSaveWidget = () => {
-    console.log("saved");
   };
 
   return (
