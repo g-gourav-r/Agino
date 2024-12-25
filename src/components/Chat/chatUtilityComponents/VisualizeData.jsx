@@ -671,13 +671,20 @@ const VisualizeData = ({ DB_response, ChatLogId, query }) => {
           <FontAwesomeIcon className="mx-2" icon={faDownload} /> Download Table
         </button>
         <button
-          className={`${
-            ableToAddKPI ? "" : "invisible"
-          } btn-green p-1 rounded m-2 text-start`}
+          className={`${ableToAddKPI ? "" : "d-none"} ${
+            selectedDataSource ? "btn-green" : "btn-green-disabled-tooltip"
+          } p-1 rounded m-2 text-start`}
+          disabled={!selectedDataSource}
+          data-bs-toggle={!selectedDataSource ? "tooltip" : undefined}
+          data-bs-placement="bottom"
+          title={
+            !selectedDataSource
+              ? "Start a new chat to add KPI to the dashboard"
+              : undefined
+          }
           onClick={() => {
             setKPIModalVisiblity(true);
           }}
-          disabled={loading}
         >
           <FontAwesomeIcon className="mx-2" icon={faPlusCircle} /> Add KPI to
           dashboard
