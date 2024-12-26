@@ -476,7 +476,7 @@ const VisualizeData = ({ DB_response, ChatLogId, query }) => {
           type: "success",
           isLoading: false,
         });
-        setDashboardModalVisiblity(false);
+        setKPIModalVisiblity(false);
       })
       .catch((error) => {
         setLoading(false);
@@ -491,6 +491,7 @@ const VisualizeData = ({ DB_response, ChatLogId, query }) => {
         setKPIModalVisiblity(false);
       });
   };
+
   const handleDownloadTable = () => {
     const downloadingFileToast = toast.loading("Downloading the file...");
 

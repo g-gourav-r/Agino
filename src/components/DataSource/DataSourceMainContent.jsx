@@ -15,6 +15,7 @@ import {
   faChevronDown,
 } from "@fortawesome/free-solid-svg-icons";
 import { toast, ToastContainer } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 function DataSourceMainContent({ setRefresh, showDataBaseTable }) {
   const [configurableDataSources, setConfigurableDataSources] = useState([]);
@@ -45,6 +46,7 @@ function DataSourceMainContent({ setRefresh, showDataBaseTable }) {
   const getDatabaseTablesApi = createApiCall("existingSheets", GET);
   const connectDatabaseApi = createApiCall("database", POST);
   const uploadSheetApi = createApiCall("uploadSheet", POST);
+  const navigate = useNavigate();
 
   const appData = JSON.parse(localStorage.getItem("appData"));
   const token = appData?.token;
@@ -311,19 +313,41 @@ function DataSourceMainContent({ setRefresh, showDataBaseTable }) {
     })
       .then((response) => {
         if (response?.status) {
-          toast.update(fileUploadToast, {
-            render: "File uploaded successfully!",
-            type: "success",
-            isLoading: false,
-            autoClose: 3000,
-          });
+          let countdown = 3; // Start with 3 seconds for the countdown
+
+          // Dynamically update the toast message with countdown
+          const interval = setInterval(() => {
+            if (countdown > 1) {
+              toast.update(fileUploadToast, {
+                render: `File uploaded successfully! Redirecting to chat page in ${countdown}...`,
+                type: "success",
+                isLoading: false,
+                autoClose: false, // Prevent auto-close during countdown
+              });
+              countdown -= 1;
+            } else {
+              clearInterval(interval);
+
+              // Final toast update before navigating
+              toast.update(fileUploadToast, {
+                render: "Redirecting to chat page...",
+                type: "success",
+                isLoading: false,
+                autoClose: 1000, // Auto-close after 1 second
+              });
+
+              // Navigate to the chat page
+              setTimeout(() => {
+                setShowFileModal(false);
+                navigate("/chat");
+              }, 1000);
+            }
+          }, 1000);
+
+          // Reset states for file upload
           setRefresh((prev) => !prev);
           setFile(null);
           setFileUpload(false);
-
-          setTimeout(() => {
-            setShowFileModal(false);
-          }, 3000);
         } else {
           toast.update(fileUploadToast, {
             render: response?.message || "Failed to upload the file.",
