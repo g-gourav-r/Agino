@@ -7,11 +7,10 @@ import {
   useSensors,
   useSensor,
 } from "@dnd-kit/core";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardColumns from "./DashboardUtilityComponents/DashboardColumns";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import createApiCall, { GET, PUT } from "../api/api";
-import { useEffect } from "react";
 import {
   faDatabase,
   faExclamationCircle,
@@ -27,6 +26,7 @@ function DashboardMainContent({ setSelectedDataSource }) {
   const [currentDataSource, setCurrentDataSource] = useState("");
   const [dashboardContent, setDashboardContent] = useState([]);
   const [stateChange, setChangeInState] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
 
   const connectedDataSourcesApi = createApiCall("connecteddatabases", GET);
   const fetchDashboardApi = createApiCall("dashboardAnalytics/{id}", GET);
@@ -34,6 +34,7 @@ function DashboardMainContent({ setSelectedDataSource }) {
 
   const appData = JSON.parse(localStorage.getItem("appData"));
   const token = appData?.token;
+  const selectedDataSource = appData?.chatData?.selectedDataSource;
 
   // Fetch the connected DBSources
   useEffect(() => {
@@ -57,7 +58,16 @@ function DashboardMainContent({ setSelectedDataSource }) {
       });
   }, []);
 
-  // Fetch Dashboards
+  // Set currentDataSource to the selectedDataSource if it exists
+  useEffect(() => {
+    if (selectedDataSource) {
+      setCurrentDataSource(selectedDataSource); // Set selectedDataSource to currentDataSource
+      setSelectedDataSource(selectedDataSource); // Update the parent component (if needed)
+      handleFetchDashboards(selectedDataSource); // Fetch dashboards for the selected source
+    }
+  }, [selectedDataSource]); // Triggered when `selectedDataSource` is available or changes
+
+  // Fetch Dashboards by ID
   const handleFetchDashboards = (id) => {
     setDashboardContent([]);
     setLoading(true);
@@ -92,22 +102,17 @@ function DashboardMainContent({ setSelectedDataSource }) {
 
         // Process and set dashboard content
         setDashboardContent(processData(sortedContent, id));
+        setIsFetching(false); // Done fetching
       })
       .catch((error) => {
         setLoading(false);
         console.error("Error fetching dashboard data:", error);
+        setIsFetching(false); // Done fetching with error
       });
   };
 
-  // useEffect(() => {
-  //   if (dashboardContent.length > 0) {
-  //     console.log("Updated Dashboard Content:", dashboardContent);
-  //   }
-  // }, [dashboardContent]);
-
   // Helper function to convert the API Response
   const processData = (apiResponse, dataSource) => {
-    // Filter only items where type is "graph"
     return apiResponse
       .filter((item) => item.type === "graph")
       .map((item) => {
@@ -184,14 +189,13 @@ function DashboardMainContent({ setSelectedDataSource }) {
   );
 
   const handleSave = () => {
-    // Map each widget into the required structure for the API
     const updatedWidgets = dashboardContent.map((item) => ({
-      id: item.id, // Widget ID
-      database: currentDataSource, // The currently selected data source
+      id: item.id,
+      database: currentDataSource,
       title: item.title,
       query: item.query,
-      graphoption: item.graphoption, // Includes the updated order
-      type: item.type, // e.g., "graph" or "metrics"
+      graphoption: item.graphoption,
+      type: item.type,
     }));
 
     updateDashboardApi({
@@ -249,7 +253,6 @@ function DashboardMainContent({ setSelectedDataSource }) {
                 }}
               >
                 <option value="">Select a Data Source</option>{" "}
-                {/* No 'selected' attribute needed */}
                 {dataSources.map((dataSource, index) => (
                   <option key={index} value={dataSource._id}>
                     {dataSource.tableName || "Unknown Database"}
@@ -272,11 +275,11 @@ function DashboardMainContent({ setSelectedDataSource }) {
 
       {/* Chat Body */}
       <div className="border chat-content overflow-auto mx-1 mb-2 rounded flex-grow-1 p-2 h-100">
-        {loading ? (
+        {loading || isFetching ? (
           <div className="d-flex justify-content-center align-items-center flex-grow-1 h-100">
             <MutatingDotsLoader />
           </div>
-        ) : Object.keys(dashboardContent).length > 0 ? (
+        ) : dashboardContent.length > 0 ? (
           <DndContext
             sensors={sensors}
             onDragEnd={handleDragEnd}
