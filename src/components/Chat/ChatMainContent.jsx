@@ -11,6 +11,8 @@ import {
   faDatabase,
   faPaperPlane,
   faCopy,
+  faPlusCircle,
+  faTachographDigital,
 } from "@fortawesome/free-solid-svg-icons";
 
 import CodeEditor from "./chatUtilityComponents/CodeEditor";
@@ -26,10 +28,15 @@ function ChatMainContent({ selectedChatId }) {
   const [loadingMessages, setLoadingMessages] = useState([]);
   const [currentDataBase, setCurrentDataBase] = useState("");
   const lastMessageRef = useRef(null);
+  const [showKPIModal, setKPIModalVisiblity] = useState(false);
+  const [KPIValue, setKPIValue] = useState("");
+  const [KPITitle, setKPITitle] = useState("");
+  const [KPIQuery, setKPIQuery] = useState("");
 
   const connectedDataSourcesApi = createApiCall("connecteddatabases", GET);
   const fetchChatHistory = createApiCall(`chatlogBySessionId`);
   const newMessageApi = createApiCall("newMessage", POST);
+  const addToDashboardApi = createApiCall("dashboardAnalytics", POST);
 
   const appData = JSON.parse(localStorage.getItem("appData"));
   const token = appData?.token;
@@ -244,6 +251,72 @@ function ChatMainContent({ selectedChatId }) {
     }
   };
 
+  const handleAddKPI = () => {
+    if (!KPITitle) {
+      toast.error("Please add the title", { autoClose: 1000 });
+      return;
+    }
+
+    // Initialize a loading toast
+    const addToDashboardToast = toast.loading("Adding to Dashboard...");
+    addToDashboardApi({
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: {
+        database: selectedDataSource,
+        query: KPIQuery,
+        title: KPITitle,
+        type: "metrics",
+        graphoption: {
+          order: -1,
+        },
+      },
+    })
+      .then((response) => {
+        // Update the toast to show success with buttons
+        toast.update(addToDashboardToast, {
+          render: (
+            <>
+              <div>KPI Added to dashboard successfully</div>
+              <div className="d-flex justify-content-between mt-2">
+                <button
+                  className="btn-green rounded p-1"
+                  onClick={() => navigate("/dashboard")}
+                >
+                  Go to Dashboard
+                </button>
+                <button
+                  className="btn-green rounded p-1"
+                  onClick={() => {
+                    toast.dismiss(addToDashboardToast);
+                  }}
+                >
+                  Stay on Chat
+                </button>
+              </div>
+            </>
+          ),
+          autoClose: false, // Keep toast open until user interaction
+          type: "success",
+          isLoading: false,
+        });
+        setKPIModalVisiblity(false);
+      })
+      .catch((error) => {
+        // Update the toast to show an error
+        toast.update(addToDashboardToast, {
+          render: "Failed to add KPI, try again",
+          autoClose: 1000,
+          type: "error",
+          isLoading: false,
+        });
+        console.error(`API fetch failed, ${error}`);
+        setKPIModalVisiblity(false);
+      });
+  };
+
   return (
     <>
       <ToastContainer />
@@ -347,7 +420,7 @@ function ChatMainContent({ selectedChatId }) {
                   ) : (
                     <div
                       className="ai shadow bg-white w-75 p-2"
-                      style={{fontSize: "0.85rem" }}
+                      style={{ fontSize: "0.85rem" }}
                     >
                       <Tabs
                         defaultActiveKey="agent"
@@ -374,9 +447,9 @@ function ChatMainContent({ selectedChatId }) {
                                   </ReactMarkdown>
                                 </div>
                                 <div className="col-1">
-                                  <div className="button-group">
+                                  <div className="button-group d-flex flex-column mx-2">
                                     <button
-                                      className="btn-green p-2 rounded"
+                                      className="btn-green p-2 rounded m-1"
                                       onClick={() => {
                                         const textToCopy = msg.context.agent; // Extract the text content
                                         navigator.clipboard
@@ -395,9 +468,51 @@ function ChatMainContent({ selectedChatId }) {
                                             );
                                           });
                                       }}
+                                      data-bs-toggle="tooltip"
+                                      data-bs-placement="top"
+                                      title="Copy to clipboard"
                                     >
                                       <FontAwesomeIcon icon={faCopy} />
                                     </button>
+                                    {!isHistoricChat &&
+                                      msg.context.DB_response &&
+                                      msg.context.DB_response.length > 0 &&
+                                      Object.keys(msg.context.DB_response[0])
+                                        .length === 1 && (
+                                        <button
+                                          className="btn-green p-2 rounded m-1"
+                                          data-bs-toggle="tooltip"
+                                          data-bs-placement="top"
+                                          title="Add KPI to Dashboard"
+                                          onClick={() => {
+                                            const firstDBResponse =
+                                              msg.context.DB_response[0];
+
+                                            // Ensure msg.context.DB_response is not empty
+                                            if (firstDBResponse) {
+                                              const firstKey =
+                                                Object.keys(firstDBResponse)[0];
+                                              const firstValue =
+                                                Object.values(
+                                                  firstDBResponse
+                                                )[0] || "No data";
+                                              setKPITitle(
+                                                firstKey || "Unknown KPI"
+                                              );
+
+                                              setKPIValue(firstValue);
+                                              setKPIQuery(
+                                                msg.context.SQL_query
+                                              );
+                                              setKPIModalVisiblity(true);
+                                            }
+                                          }}
+                                        >
+                                          <FontAwesomeIcon
+                                            icon={faPlusCircle}
+                                          />
+                                        </button>
+                                      )}
                                   </div>
                                 </div>
                               </div>
@@ -504,6 +619,79 @@ function ChatMainContent({ selectedChatId }) {
           </>
         )}
       </div>
+      {showKPIModal && (
+        <>
+          <div
+            className="modal-backdrop opacity-50 rounded"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+            }}
+          ></div>
+          <div className="modal show d-block" tabIndex="-1">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content bg-white rounded p-2">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    <FontAwesomeIcon
+                      className="mx-2"
+                      icon={faTachographDigital}
+                    />{" "}
+                    Add to <span className="text-green">Dashboard</span>{" "}
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    aria-label="Close"
+                    onClick={() => {
+                      setKPIModalVisiblity(false);
+                    }}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Title"
+                    value={KPITitle}
+                    onChange={(e) => setKPITitle(e.target.value)}
+                  />
+                  <div className="text-center mt-2">
+                    <small>Preview</small>
+                    <div className="container mt-4">
+                      <div className="row justify-content-center">
+                        <div className="col-md-5">
+                          <div className="card text-center shadow-lg">
+                            <div className="card-body">
+                              <h3 className="font-weight-bold text-dark">
+                                {KPIValue}
+                              </h3>
+                              <h6 className="text-green">{KPITitle}</h6>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    className={`${
+                      loading ? "btn-green-disabled" : "btn-green"
+                    } p-1 w-50 rounded`}
+                    onClick={handleAddKPI}
+                  >
+                    Add to dashboard
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }
