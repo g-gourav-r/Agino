@@ -61,23 +61,23 @@ function DashboardSidebar({ selectedDataSource }) {
   ) : (
     <div className="d-flex mt-4 h-100">
       <div className="container text-center">
-        <div className="row justify-content-center">
           {processedData.length > 0 &&
             processedData.map((data, index) => (
-              <div className="col-md-6 col-lg-6 mb-4" key={index}>
-                <div className="card text-center shadow-lg">
-                  <div className="card-body">
-                    <h3 className="font-weight-bold text-dark">
-                      {data.data[0]
-                        ? Object.values(data.data[0])[0]
-                        : "No Value"}
-                    </h3>
-                    <h6 className="text-green">{data.title}</h6>
+              <div className="row justify-content-center">
+                <div className="col-10" key={index}>
+                  <div className="card text-center shadow-lg">
+                    <div className="card-body">
+                      <h3 className="font-weight-bold text-dark">
+                        {data.data[0]
+                          ? Object.values(data.data[0])[0]
+                          : "No Value"}
+                      </h3>
+                      <h6 className="text-green">{data.title}</h6>
+                    </div>
                   </div>
                 </div>
               </div>
             ))}
-        </div>
       </div>
     </div>
   );
