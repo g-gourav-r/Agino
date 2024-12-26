@@ -342,22 +342,20 @@ function ChatMainContent({ selectedChatId }) {
                         name="dataSource"
                         id="dataSource"
                         disabled={sessionId && selectedDataSource}
-                        value={currentDataBase || ""}
+                        value={selectedDataSource || ""}
                         onChange={(e) => {
                           setDataSource(e.target.value);
                           setCurrentDataBase(e.target.value);
                         }}
                       >
-                        <option value="" selected>
-                          Select a Data Source
-                        </option>
+                        <option value="">Select a Data Source</option>{" "}
                         {dataSources.map((dataSource, index) => (
                           <option
                             key={index}
                             data-key={dataSource._id}
                             value={dataSource._id}
                           >
-                            {dataSource.tableName || "Unknown Database"}
+                            {dataSource.tableName || "Unknown Database"}{" "}
                           </option>
                         ))}
                       </select>
