@@ -10,17 +10,18 @@ import {
 import { useState } from "react";
 import DashboardColumns from "./DashboardUtilityComponents/DashboardColumns";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import createApiCall, { GET } from "../api/api";
+import createApiCall, { GET, PUT } from "../api/api";
 import { useEffect } from "react";
 import {
   faDatabase,
   faExclamationCircle,
+  faSave,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MutatingDotsLoader from "../Loaders/MutatingDots";
 import { toast, ToastContainer } from "react-toastify";
 
-function DashboardMainContent() {
+function DashboardMainContent({ setSelectedDataSource }) {
   const [dataSources, setDataSources] = useState();
   const [loading, setLoading] = useState(false);
   const [currentDataSource, setCurrentDataSource] = useState("");
@@ -29,6 +30,7 @@ function DashboardMainContent() {
 
   const connectedDataSourcesApi = createApiCall("connecteddatabases", GET);
   const fetchDashboardApi = createApiCall("dashboardAnalytics/{id}", GET);
+  const updateDashboardApi = createApiCall("dashboardAnalytics", PUT);
 
   const appData = JSON.parse(localStorage.getItem("appData"));
   const token = appData?.token;
@@ -70,7 +72,26 @@ function DashboardMainContent() {
     })
       .then((response) => {
         setLoading(false);
-        setDashboardContent(processData(response.data));
+
+        // Separate graph and metrics types
+        const graphs = response.data.filter((item) => item.type === "graph");
+        const metrics = response.data.filter((item) => item.type === "metrics");
+
+        // Sort only the graphs (add check for graphoption and order)
+        const sortedGraphs = graphs.sort((a, b) => {
+          const orderA = a.graphoption?.order ?? -1;
+          const orderB = b.graphoption?.order ?? -1;
+
+          if (orderA === -1) return 1;
+          if (orderB === -1) return -1;
+          return orderA - orderB;
+        });
+
+        // Combine sorted graphs with metrics (metrics remain unchanged)
+        const sortedContent = [...sortedGraphs, ...metrics];
+
+        // Process and set dashboard content
+        setDashboardContent(processData(sortedContent, id));
       })
       .catch((error) => {
         setLoading(false);
@@ -85,69 +106,75 @@ function DashboardMainContent() {
   // }, [dashboardContent]);
 
   // Helper function to convert the API Response
-  const processData = (apiResponse) => {
-    const chartData = apiResponse.map((item) => {
-      const { graphoption, data, _id, query, title } = item;
+  const processData = (apiResponse, dataSource) => {
+    // Filter only items where type is "graph"
+    return apiResponse
+      .filter((item) => item.type === "graph")
+      .map((item) => {
+        const { graphoption, data, _id, query, title } = item;
+        const xAxis = graphoption.coOrdinate.X;
+        const y1Axis = graphoption.coOrdinate.Y1;
+        const y2Axis = graphoption.coOrdinate.Y2 || "";
 
-      const xAxis = graphoption.coOrdinate.X;
-      const y1Axis = graphoption.coOrdinate.Y1;
-      const y2Axis = graphoption.coOrdinate.Y2 || "";
+        const graphData = {
+          labels: [],
+          datasets: [
+            {
+              label: y1Axis,
+              data: [],
+              borderColor: "rgba(75, 192, 192, 1)",
+              backgroundColor: "rgba(75, 192, 192, 0.2)",
+              fill: false,
+            },
+          ],
+        };
 
-      const graphType = graphoption.graphType || "line";
+        data.forEach((entry) => {
+          graphData.labels.push(entry[xAxis]);
+          graphData.datasets[0].data.push(entry[y1Axis]);
 
-      const graphData = {
-        labels: [],
-        datasets: [
-          {
-            label: y1Axis,
-            data: [],
-            borderColor: "rgba(75, 192, 192, 1)",
-            backgroundColor: "rgba(75, 192, 192, 0.2)",
-            fill: false,
-          },
-        ],
-      };
+          if (y2Axis) {
+            graphData.datasets.push({
+              label: y2Axis,
+              data: entry[y2Axis] || [],
+              borderColor: "rgba(153, 102, 255, 1)",
+              backgroundColor: "rgba(153, 102, 255, 0.2)",
+              fill: false,
+            });
+          }
+        });
 
-      data.forEach((entry) => {
-        const xValue = entry[xAxis];
-        const y1Value = entry[y1Axis];
-        graphData.labels.push(xValue);
-        graphData.datasets[0].data.push(y1Value);
-        if (y2Axis) {
-          graphData.datasets.push({
-            label: y2Axis,
-            data: entry[y2Axis] || [],
-            borderColor: "rgba(153, 102, 255, 1)",
-            backgroundColor: "rgba(153, 102, 255, 0.2)",
-            fill: false,
-          });
-        }
+        return {
+          id: _id,
+          database: dataSource,
+          title: title,
+          query: query,
+          graphoption: graphoption,
+          graphData: graphData,
+        };
       });
-
-      return {
-        id: _id,
-        title: title,
-        query: query,
-        graphType: graphType,
-        graphOptions: graphoption.options,
-        graphData: graphData,
-      };
-    });
-
-    return chartData;
   };
 
   const handleDragEnd = (event) => {
-    setChangeInState(true);
     const { active, over } = event;
-    if (active.id === over.id) return;
+    if (!over || active.id === over.id) return;
 
     setDashboardContent((content) => {
       const originalPos = content.findIndex((item) => item.id === active.id);
       const newPos = content.findIndex((item) => item.id === over.id);
 
-      return arrayMove(content, originalPos, newPos);
+      const updatedContent = arrayMove(content, originalPos, newPos);
+
+      return updatedContent.map((item, index) => ({
+        ...item,
+        graphoption: {
+          ...item.graphoption,
+          order: index,
+        },
+      }));
     });
+
+    setChangeInState(true);
   };
 
   const sensors = useSensors(
@@ -156,15 +183,48 @@ function DashboardMainContent() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
+  const handleSave = () => {
+    // Map each widget into the required structure for the API
+    const updatedWidgets = dashboardContent.map((item) => ({
+      id: item.id, // Widget ID
+      database: currentDataSource, // The currently selected data source
+      title: item.title,
+      query: item.query,
+      graphoption: item.graphoption, // Includes the updated order
+      type: item.type, // e.g., "graph" or "metrics"
+    }));
+
+    updateDashboardApi({
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: updatedWidgets,
+    })
+      .then(() => {
+        toast.success("Dashboard saved successfully!");
+        setChangeInState(false);
+      })
+      .catch((error) => {
+        console.error("Error saving dashboard:", error);
+        toast.error("Failed to save dashboard!");
+      });
+  };
+
   return (
     <>
       <ToastContainer />
       {/*Header */}
       <div>
         <div className="bg-light m-1 p-2 border rounded d-flex align-items-center flex-wrap">
-          <div className="status">
+          <div className="status d-flex align-items-center">
             {stateChange && (
               <>
+                <FontAwesomeIcon
+                  icon={faSave}
+                  className="btn-green p-1 rounded"
+                  onClick={handleSave}
+                />
                 <FontAwesomeIcon
                   icon={faExclamationCircle}
                   className="text-danger mx-2"
@@ -185,6 +245,7 @@ function DashboardMainContent() {
                 onChange={(e) => {
                   setCurrentDataSource(e.target.value);
                   handleFetchDashboards(e.target.value);
+                  setSelectedDataSource(e.target.value);
                 }}
               >
                 <option value="">Select a Data Source</option>{" "}

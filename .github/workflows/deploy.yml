@@ -46,14 +46,31 @@ jobs:
       - name: Build app
         run: npm run build
 
-      - name: Set S3 bucket based on branch
+      - name: Set S3 bucket based on branch or pull request
         id: set_bucket
         run: |
-          if [ "${GITHUB_REF##*/}" == "staging" ]; then
-            echo "S3_BUCKET=${{ secrets.AWS_S3_BUCKET_STAGING }}" >> $GITHUB_ENV
+          # Determine branch for pull request or push event
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BRANCH_NAME="${{ github.event.pull_request.base.ref }}"
           else
-            echo "S3_BUCKET=${{ secrets.AWS_S3_BUCKET_PRODUCTION }}" >> $GITHUB_ENV
+            BRANCH_NAME="${{ github.ref_name }}"
           fi
+
+          # Set S3 bucket based on branch
+          if [[ "$BRANCH_NAME" == "staging" ]]; then
+            echo "S3_BUCKET=${{ secrets.AWS_S3_BUCKET_STAGING }}" >> $GITHUB_ENV
+            echo "BUCKET_ENVIRONMENT=staging" >> $GITHUB_ENV
+          elif [[ "$BRANCH_NAME" == "production" ]]; then
+            echo "S3_BUCKET=${{ secrets.AWS_S3_BUCKET_PRODUCTION }}" >> $GITHUB_ENV
+            echo "BUCKET_ENVIRONMENT=production" >> $GITHUB_ENV
+          else
+            echo "Error: Unsupported branch $BRANCH_NAME" >&2
+            exit 1
+          fi
+
+      - name: Log the S3 bucket
+        run: |
+          echo "The S3 bucket environment is set to: ${{ env.BUCKET_ENVIRONMENT }}"
 
       - name: Upload to S3
         uses: jakejarvis/s3-sync-action@master
@@ -65,6 +82,6 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Log the S3 bucket
+      - name: Log the uploaded S3 bucket
         run: |
-          echo "The changes have been uploaded to the S3 bucket: ${{ env.S3_BUCKET }}"
+          echo "The changes have been uploaded to the S3 bucket corresponding to: ${{ env.BUCKET_ENVIRONMENT }}"

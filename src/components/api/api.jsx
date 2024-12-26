@@ -1,6 +1,7 @@
 export const GET = 'get';
 export const POST = 'post';
 export const PUT = 'put';
+export const DELETE = 'delete';
 
 const createApiCall = (url, method) => (params = {}) => {
     let apiEndpoint = " https://api.agino.tech/" + url;
