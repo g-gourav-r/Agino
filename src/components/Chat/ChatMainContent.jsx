@@ -342,6 +342,14 @@ function ChatMainContent({ selectedChatId }) {
                         name="dataSource"
                         id="dataSource"
                         disabled={sessionId && selectedDataSource}
+                        {...(sessionId && selectedDataSource
+                          ? {
+                              "data-bs-toggle": "tooltip",
+                              "data-bs-placement": "top",
+                              title:
+                                "To change the data source, you need to start a new chat session.",
+                            }
+                          : {})}
                         value={selectedDataSource || ""}
                         onChange={(e) => {
                           setDataSource(e.target.value);
@@ -443,42 +451,14 @@ function ChatMainContent({ selectedChatId }) {
                                   <ReactMarkdown>
                                     {msg.context.agent}
                                   </ReactMarkdown>
-                                </div>
-                                <div className="col-1">
-                                  <div className="button-group d-flex flex-column mx-2">
-                                    <button
-                                      className="btn-green p-2 rounded m-1"
-                                      onClick={() => {
-                                        const textToCopy = msg.context.agent; // Extract the text content
-                                        navigator.clipboard
-                                          .writeText(textToCopy) // Copy to clipboard
-                                          .then(() => {
-                                            toast.info("Copied to clipboard!", {
-                                              autoClose: 300,
-                                            });
-                                          })
-                                          .catch((err) => {
-                                            toast.error(
-                                              `Failed to copy: ${err}`,
-                                              {
-                                                autoClose: 300,
-                                              }
-                                            );
-                                          });
-                                      }}
-                                      data-bs-toggle="tooltip"
-                                      data-bs-placement="top"
-                                      title="Copy to clipboard"
-                                    >
-                                      <FontAwesomeIcon icon={faCopy} />
-                                    </button>
-                                    {!isHistoricChat &&
-                                      msg.context.DB_response &&
-                                      msg.context.DB_response.length > 0 &&
-                                      Object.keys(msg.context.DB_response[0])
-                                        .length === 1 && (
+                                  {!isHistoricChat &&
+                                    msg.context.DB_response &&
+                                    msg.context.DB_response.length > 0 &&
+                                    Object.keys(msg.context.DB_response[0])
+                                      .length === 1 && (
+                                      <div>
                                         <button
-                                          className="btn-green p-2 rounded m-1"
+                                          className="btn-green p-1 rounded m-1"
                                           data-bs-toggle="tooltip"
                                           data-bs-placement="top"
                                           title="Add KPI to Dashboard"
@@ -507,10 +487,44 @@ function ChatMainContent({ selectedChatId }) {
                                           }}
                                         >
                                           <FontAwesomeIcon
+                                            className="me-1"
                                             icon={faPlusCircle}
                                           />
+                                          <span>
+                                            Add {KPITitle} to Dashboard
+                                          </span>
                                         </button>
-                                      )}
+                                      </div>
+                                    )}
+                                </div>
+                                <div className="col-lg-1">
+                                  <div className="button-group">
+                                    <button
+                                      className="btn-green p-2 rounded m-1"
+                                      onClick={() => {
+                                        const textToCopy = msg.context.agent; // Extract the text content
+                                        navigator.clipboard
+                                          .writeText(textToCopy) // Copy to clipboard
+                                          .then(() => {
+                                            toast.info("Copied to clipboard!", {
+                                              autoClose: 300,
+                                            });
+                                          })
+                                          .catch((err) => {
+                                            toast.error(
+                                              `Failed to copy: ${err}`,
+                                              {
+                                                autoClose: 300,
+                                              }
+                                            );
+                                          });
+                                      }}
+                                      data-bs-toggle="tooltip"
+                                      data-bs-placement="top"
+                                      title="Copy to clipboard"
+                                    >
+                                      <FontAwesomeIcon icon={faCopy} />
+                                    </button>
                                   </div>
                                 </div>
                               </div>
@@ -518,7 +532,7 @@ function ChatMainContent({ selectedChatId }) {
                               {msg.context.followup &&
                                 msg.context.followup.length > 0 && (
                                   <>
-                                    <hr className="mx-3 mt-4" />
+                                    <hr className="mx-3 mt-0" />
                                     <div className="mt-1">
                                       <div className="row d-flex mx-3">
                                         {msg.context.followup.map(
@@ -655,6 +669,7 @@ function ChatMainContent({ selectedChatId }) {
                     className="form-control"
                     placeholder="Title"
                     value={KPITitle}
+                    autoFocus
                     onChange={(e) => setKPITitle(e.target.value)}
                   />
                   <div className="text-center mt-2">
@@ -663,11 +678,13 @@ function ChatMainContent({ selectedChatId }) {
                       <div className="row justify-content-center">
                         <div className="col-md-5">
                           <div className="card text-center shadow-lg">
-                            <div className="card-body">
-                              <h3 className="font-weight-bold text-dark">
+                            <div className="card-body p-0">
+                              <p className="font-weight-bold text-dark mt-3">
                                 {KPIValue}
-                              </h3>
-                              <h6 className="text-green">{KPITitle}</h6>
+                              </p>
+                              <p className="font-italic text-green">
+                                {KPITitle}
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -675,6 +692,7 @@ function ChatMainContent({ selectedChatId }) {
                     </div>
                   </div>
                 </div>
+
                 <div className="modal-footer">
                   <button
                     className={`${
