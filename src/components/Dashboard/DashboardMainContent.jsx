@@ -7,11 +7,10 @@ import {
   useSensors,
   useSensor,
 } from "@dnd-kit/core";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardColumns from "./DashboardUtilityComponents/DashboardColumns";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import createApiCall, { GET, PUT } from "../api/api";
-import { useEffect } from "react";
 import {
   faDatabase,
   faExclamationCircle,
@@ -21,13 +20,13 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MutatingDotsLoader from "../Loaders/MutatingDots";
 import { toast, ToastContainer } from "react-toastify";
 
-
-function DashboardMainContent() {
+function DashboardMainContent({ setSelectedDataSource }) {
   const [dataSources, setDataSources] = useState();
   const [loading, setLoading] = useState(false);
   const [currentDataSource, setCurrentDataSource] = useState("");
   const [dashboardContent, setDashboardContent] = useState([]);
   const [stateChange, setChangeInState] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
 
   const connectedDataSourcesApi = createApiCall("connecteddatabases", GET);
   const fetchDashboardApi = createApiCall("dashboardAnalytics/{id}", GET);
@@ -35,6 +34,7 @@ function DashboardMainContent() {
 
   const appData = JSON.parse(localStorage.getItem("appData"));
   const token = appData?.token;
+  const selectedDataSource = appData?.chatData?.selectedDataSource;
 
   // Fetch the connected DBSources
   useEffect(() => {
@@ -58,7 +58,16 @@ function DashboardMainContent() {
       });
   }, []);
 
-  // Fetch Dashboards
+  // Set currentDataSource to the selectedDataSource if it exists
+  useEffect(() => {
+    if (selectedDataSource) {
+      setCurrentDataSource(selectedDataSource); // Set selectedDataSource to currentDataSource
+      setSelectedDataSource(selectedDataSource); // Update the parent component (if needed)
+      handleFetchDashboards(selectedDataSource); // Fetch dashboards for the selected source
+    }
+  }, [selectedDataSource]); // Triggered when `selectedDataSource` is available or changes
+
+  // Fetch Dashboards by ID
   const handleFetchDashboards = (id) => {
     setDashboardContent([]);
     setLoading(true);
@@ -73,73 +82,82 @@ function DashboardMainContent() {
     })
       .then((response) => {
         setLoading(false);
-        const sortedContent = response.data.sort((a, b) => {
-          if (a.graphoption.order === -1) return 1;
-          if (b.graphoption.order === -1) return -1;
-          return a.graphoption.order - b.graphoption.order;
+
+        // Separate graph and metrics types
+        const graphs = response.data.filter((item) => item.type === "graph");
+        const metrics = response.data.filter((item) => item.type === "metrics");
+
+        // Sort only the graphs (add check for graphoption and order)
+        const sortedGraphs = graphs.sort((a, b) => {
+          const orderA = a.graphoption?.order ?? -1;
+          const orderB = b.graphoption?.order ?? -1;
+
+          if (orderA === -1) return 1;
+          if (orderB === -1) return -1;
+          return orderA - orderB;
         });
 
-        setDashboardContent(processData(response.data, id));
+        // Combine sorted graphs with metrics (metrics remain unchanged)
+        const sortedContent = [...sortedGraphs, ...metrics];
 
+        // Process and set dashboard content
+        setDashboardContent(processData(sortedContent, id));
+        setIsFetching(false); // Done fetching
       })
       .catch((error) => {
         setLoading(false);
         console.error("Error fetching dashboard data:", error);
+        setIsFetching(false); // Done fetching with error
       });
   };
 
-  // useEffect(() => {
-  //   if (dashboardContent.length > 0) {
-  //     console.log("Updated Dashboard Content:", dashboardContent);
-  //   }
-  // }, [dashboardContent]);
-
   // Helper function to convert the API Response
   const processData = (apiResponse, dataSource) => {
-    return apiResponse.map((item) => {
-      const { graphoption, data, _id, query, title } = item;
+    return apiResponse
+      .filter((item) => item.type === "graph")
+      .map((item) => {
+        const { graphoption, data, _id, query, title } = item;
+        const xAxis = graphoption.coOrdinate.X;
+        const y1Axis = graphoption.coOrdinate.Y1;
+        const y2Axis = graphoption.coOrdinate.Y2 || "";
 
-      const xAxis = graphoption.coOrdinate.X;
-      const y1Axis = graphoption.coOrdinate.Y1;
-      const y2Axis = graphoption.coOrdinate.Y2 || "";
+        const graphData = {
+          labels: [],
+          datasets: [
+            {
+              label: y1Axis,
+              data: [],
+              borderColor: "rgba(75, 192, 192, 1)",
+              backgroundColor: "rgba(75, 192, 192, 0.2)",
+              fill: false,
+            },
+          ],
+        };
 
-      const graphData = {
-        labels: [],
-        datasets: [
-          {
-            label: y1Axis,
-            data: [],
-            borderColor: "rgba(75, 192, 192, 1)",
-            backgroundColor: "rgba(75, 192, 192, 0.2)",
-            fill: false,
-          },
-        ],
-      };
+        data.forEach((entry) => {
+          graphData.labels.push(entry[xAxis]);
+          graphData.datasets[0].data.push(entry[y1Axis]);
 
-      data.forEach((entry) => {
-        graphData.labels.push(entry[xAxis]);
-        graphData.datasets[0].data.push(entry[y1Axis]);
+          if (y2Axis) {
+            graphData.datasets.push({
+              label: y2Axis,
+              data: entry[y2Axis] || [],
+              borderColor: "rgba(153, 102, 255, 1)",
+              backgroundColor: "rgba(153, 102, 255, 0.2)",
+              fill: false,
+            });
+          }
+        });
 
-        if (y2Axis) {
-          graphData.datasets.push({
-            label: y2Axis,
-            data: entry[y2Axis] || [],
-            borderColor: "rgba(153, 102, 255, 1)",
-            backgroundColor: "rgba(153, 102, 255, 0.2)",
-            fill: false,
-          });
-        }
+        return {
+          id: _id,
+          database: dataSource,
+          title: title,
+          query: query,
+          graphoption: graphoption,
+          graphData: graphData,
+        };
       });
-
-      return {
-        id: _id,
-        database: dataSource,
-        title: title,
-        query: query,
-        graphoption: graphoption,
-        graphData: graphData,
-      };
-    });
   };
 
   const handleDragEnd = (event) => {
@@ -171,14 +189,13 @@ function DashboardMainContent() {
   );
 
   const handleSave = () => {
-    // Map each widget into the required structure for the API
     const updatedWidgets = dashboardContent.map((item) => ({
-      id: item.id, // Widget ID
-      database: currentDataSource, // The currently selected data source
+      id: item.id,
+      database: currentDataSource,
       title: item.title,
       query: item.query,
-      graphoption: item.graphoption, // Includes the updated order
-      type: item.type, // e.g., "graph" or "metrics"
+      graphoption: item.graphoption,
+      type: item.type,
     }));
 
     updateDashboardApi({
@@ -232,10 +249,10 @@ function DashboardMainContent() {
                 onChange={(e) => {
                   setCurrentDataSource(e.target.value);
                   handleFetchDashboards(e.target.value);
+                  setSelectedDataSource(e.target.value);
                 }}
               >
                 <option value="">Select a Data Source</option>{" "}
-                {/* No 'selected' attribute needed */}
                 {dataSources.map((dataSource, index) => (
                   <option key={index} value={dataSource._id}>
                     {dataSource.tableName || "Unknown Database"}
@@ -258,25 +275,23 @@ function DashboardMainContent() {
 
       {/* Chat Body */}
       <div className="border chat-content overflow-auto mx-1 mb-2 rounded flex-grow-1 p-2 h-100">
-        {loading ? (
+        {loading || isFetching ? (
           <div className="d-flex justify-content-center align-items-center flex-grow-1 h-100">
             <MutatingDotsLoader />
           </div>
-        ) : Object.keys(dashboardContent).length > 0 ? (
+        ) : dashboardContent.length > 0 ? (
           <DndContext
             sensors={sensors}
             onDragEnd={handleDragEnd}
             collisionDetection={closestCorners}
           >
             <DashboardColumns widgets={dashboardContent} />
-
           </DndContext>
         ) : (
           <div className="d-flex flex-column justify-content-center align-items-center flex-grow-1 h-100">
             <h2>
               Monitor your <span className="text-green">KPIs</span> with{" "}
               <span className="text-green">Agino</span>
-
             </h2>
             <ul className="mt-2">
               <li>

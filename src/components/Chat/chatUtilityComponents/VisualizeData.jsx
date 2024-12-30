@@ -70,6 +70,9 @@ const VisualizeData = ({ DB_response, ChatLogId, query }) => {
   const [showGraph, setShowGraph] = useState(false);
   const [showGraphSettings, setGraphSettingsVisiblity] = useState(false);
   const [dashboardTitle, setDashboardTitle] = useState("");
+  const [ableToAddKPI, setAbleToAddKPI] = useState(false);
+  const [KPIValue, setKPIValue] = useState("");
+  const [KPITitle, setKPITitle] = useState("");
 
   // States for dynamic chart configurations
   const [showLegend, setShowLegend] = useState(true);
@@ -82,6 +85,7 @@ const VisualizeData = ({ DB_response, ChatLogId, query }) => {
   const [graphTitle, setGraphTitle] = useState("");
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [showDashboardModal, setDashboardModalVisiblity] = useState(false);
+  const [showKPIModal, setKPIModalVisiblity] = useState(false);
   const graphContainerRef = useRef(null);
   const [ableToGenerateGraph, setGraphGenerationAbility] = useState(false);
 
@@ -103,6 +107,14 @@ const VisualizeData = ({ DB_response, ChatLogId, query }) => {
   useEffect(() => {
     if (headers.length >= 2 && currentRows.length > 2) {
       setGraphGenerationAbility(true);
+    }
+    if (currentRows.length === 1 && headers.length === 1) {
+      const rowObject = currentRows[0];
+      const value = Object.values(rowObject)[0];
+      const title = headers[0];
+      setAbleToAddKPI(true);
+      setKPIValue(value);
+      setKPITitle(title);
     }
   }, []);
 
@@ -431,6 +443,55 @@ const VisualizeData = ({ DB_response, ChatLogId, query }) => {
       });
   };
 
+  const handleAddKPI = () => {
+    if (!KPITitle) {
+      toast.error("Please add the title", { autoClose: 1000 });
+      return;
+    }
+
+    setLoading(true);
+    // Initialize a loading toast
+    const addToDashboardToast = toast.loading("Adding to Dashboard...");
+    addToDashboardApi({
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: {
+        database: selectedDataSource,
+        query: query,
+        title: KPITitle,
+        type: "metrics",
+        graphoption: {
+          order: -1,
+        },
+      },
+    })
+      .then((response) => {
+        setLoading(false);
+        // Update the toast to show success
+        toast.update(addToDashboardToast, {
+          render: "KPI Added to dashboard successfully",
+          autoClose: 1000,
+          type: "success",
+          isLoading: false,
+        });
+        setKPIModalVisiblity(false);
+      })
+      .catch((error) => {
+        setLoading(false);
+        // Update the toast to show an error
+        toast.update(addToDashboardToast, {
+          render: "Failed to add KPI, try again",
+          autoClose: 1000,
+          type: "error",
+          isLoading: false,
+        });
+        console.error(`API fetch failed, ${error}`);
+        setKPIModalVisiblity(false);
+      });
+  };
+
   const handleDownloadTable = () => {
     const downloadingFileToast = toast.loading("Downloading the file...");
 
@@ -610,7 +671,25 @@ const VisualizeData = ({ DB_response, ChatLogId, query }) => {
         >
           <FontAwesomeIcon className="mx-2" icon={faDownload} /> Download Table
         </button>
-
+        <button
+          className={`${ableToAddKPI ? "" : "d-none"} ${
+            selectedDataSource ? "btn-green" : "btn-green-disabled-tooltip"
+          } p-1 rounded m-2 text-start`}
+          disabled={!selectedDataSource}
+          data-bs-toggle={!selectedDataSource ? "tooltip" : undefined}
+          data-bs-placement="bottom"
+          title={
+            !selectedDataSource
+              ? "Start a new chat to add KPI to the dashboard"
+              : undefined
+          }
+          onClick={() => {
+            setKPIModalVisiblity(true);
+          }}
+        >
+          <FontAwesomeIcon className="mx-2" icon={faPlusCircle} /> Add KPI to
+          dashboard
+        </button>
         <button
           className={`${
             ableToGenerateGraph ? "btn-green" : "btn-green-disabled-tooltip"
@@ -1068,6 +1147,79 @@ const VisualizeData = ({ DB_response, ChatLogId, query }) => {
                       loading ? "btn-green-disabled" : "btn-green"
                     } p-1 w-50 rounded`}
                     onClick={handleAddToDashboard}
+                  >
+                    Add to dashboard
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+      {showKPIModal && (
+        <>
+          <div
+            className="modal-backdrop opacity-50 rounded"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+            }}
+          ></div>
+          <div className="modal show d-block" tabIndex="-1">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content bg-white rounded p-2">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    <FontAwesomeIcon
+                      className="mx-2"
+                      icon={faTachographDigital}
+                    />{" "}
+                    Add to <span className="text-green">Dashboard</span>{" "}
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    aria-label="Close"
+                    onClick={() => {
+                      setKPIModalVisiblity(false);
+                    }}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Title"
+                    value={KPITitle}
+                    onChange={(e) => setKPITitle(e.target.value)}
+                  />
+                  <div className="text-center mt-2">
+                    <small>Preview</small>
+                    <div className="container mt-4">
+                      <div className="row justify-content-center">
+                        <div className="col-md-5">
+                          <div className="card text-center shadow-lg">
+                            <div className="card-body">
+                              <h3 className="font-weight-bold text-dark">
+                                {KPIValue}
+                              </h3>
+                              <h6 className="text-green">{KPITitle}</h6>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    className={`${
+                      loading ? "btn-green-disabled" : "btn-green"
+                    } p-1 w-50 rounded`}
+                    onClick={handleAddKPI}
                   >
                     Add to dashboard
                   </button>
