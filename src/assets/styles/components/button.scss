@@ -35,13 +35,20 @@
     // background color
     $black,
     // text color
-    $black,
-    // hover background color
     $white,
+    // hover background color
+    $black,
     // hover text color
     $black // border color
   );
+
+  // Override focus state specifically for .btn-black
+  &:focus {
+    color: $black;
+    background-color: transparent;
+  }
 }
+
 .btn-black-reverse {
   @include button(rgba($white, 0.1), $black, rgba($white, 0.1), $black, $black);
 }
