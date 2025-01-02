@@ -56,7 +56,9 @@ function DashboardItem({
     graphOptions.widgetSettings.width
   );
   const [widgetTitle, setWidgetTitle] = useState(title);
-  const [alignment, setAlignment] = useState(graphOptions.widgetSettings.graphAlignment);
+  const [alignment, setAlignment] = useState(
+    graphOptions.widgetSettings.graphAlignment
+  );
   const [showNotes, setNotesVisiblity] = useState(false);
   const [notes, setNotes] = useState({});
   const [unsavedChanges, setUnsavedChanges] = useState(false);
@@ -130,7 +132,9 @@ function DashboardItem({
       graphoption: updatedData,
       type: "graph",
     };
-    const updatingWidgetToast = toast.loading("Updating Widget...", {autoClose: 1000});
+    const updatingWidgetToast = toast.loading("Updating Widget...", {
+      autoClose: 1000,
+    });
     updateWidgetApi({
       headers: {
         Authorization: `Bearer ${token}`,
@@ -140,7 +144,7 @@ function DashboardItem({
     })
       .then((response) => {
         setUnsavedChanges(false);
-    
+
         // Update the toast to success
         toast.update(updatingWidgetToast, {
           render: "Widget updated successfully!",
@@ -201,46 +205,50 @@ function DashboardItem({
     }
   };
 
-    // Handle input change and check if the input matches "Delete"
-    const handleInputChange = (e) => {
-      const value = e.target.value;
-      setConfirmationText(value);
-  
-      // Check if input is exactly "Delete"
-      if (value.toLowerCase() === "delete") {
-        setCanDelete(true);
-      } else {
-        setCanDelete(false);
-      }
-    };
+  // Handle input change and check if the input matches "Delete"
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setConfirmationText(value);
+
+    // Check if input is exactly "Delete"
+    if (value.toLowerCase() === "delete") {
+      setCanDelete(true);
+    } else {
+      setCanDelete(false);
+    }
+  };
 
   const handleDelete = () => {
-
-    const deleteWidgetToast = toast.loading("Deleting Widget...", {autoClose: 1000});
+    const deleteWidgetToast = toast.loading("Deleting Widget...", {
+      autoClose: 1000,
+    });
     if (canDelete) {
       deleteWidgetApi({
-        headers:{
+        headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         pathVariables: {
           id: id,
         },
-      }).then((response) => {
-        toast.update(deleteWidgetToast, {
-          render: "Widget deleted successfully! Please refresh the page to see changes.",
-          type: "success",
-          isLoading: false,
-          autoClose: 1000,
+      })
+        .then((response) => {
+          toast.update(deleteWidgetToast, {
+            render:
+              "Widget deleted successfully! Please refresh the page to see changes.",
+            type: "success",
+            isLoading: false,
+            autoClose: 1000,
+          });
+        })
+        .catch((error) => {
+          toast.update(deleteWidgetToast, {
+            render: "Failed to delete Widget",
+            type: "error",
+            isLoading: false,
+            autoClose: 1000,
+          });
         });
-      }).catch((error) => {
-        toast.update(deleteWidgetToast, {
-          render: "Failed to delete Widget",
-          type: "error",
-          isLoading: false,
-          autoClose: 1000,
-        });
-      });
       // Close the modal after deletion (optional)
       setDeleteWidgetModal(false);
     }
@@ -250,7 +258,7 @@ function DashboardItem({
     <>
       <div
         ref={setNodeRef}
-        className="widget card shadow-sm bg-white rounded-3 mb-4 p-2"
+        className="widget border shadow-sm bg-white my-1 p-2"
         style={style}
       >
         {/* Card Header */}
@@ -261,55 +269,56 @@ function DashboardItem({
             {...attributes}
             style={{ cursor: "grab" }}
             aria-label="Drag to reorder"
-            className="border rounded shadow-sm card-title text-center flex-grow-1 m-0 p-1"
+            className="border shadow-sm card-title text-center flex-grow-1 m-0 p-1"
             data-bs-toggle="tooltip"
             data-bs-placement="top"
             title="Drag the card by the title"
           >
             {widgetTitle}
           </h5>
-
-          {/* Edit Icon */}
-          <FontAwesomeIcon
-            icon={faPencil}
-            className="p-1 ms-1 btn-green p-1 rounded"
-            data-bs-toggle="tooltip"
-            data-bs-placement="top"
-            title="Edit the Widget"
-            style={{ cursor: "pointer" }}
-            onClick={(e) => {
-              SetEditWidgetVisiblity(true);
-            }}
-          />
-          {/* Save Icon */}
-          <FontAwesomeIcon
-            icon={faFloppyDisk}
-            className={`p-1 ms-1 ${
-              unsavedChanges ? "btn btn-danger" : "btn-green"
-            } p-1 rounded`}
-            data-bs-toggle="tooltip"
-            data-bs-placement="top"
-            title={
-              unsavedChanges ? "Your changes are saved" : "Save the Widget"
-            }
-            style={{ cursor: unsavedChanges ? "pointer" : "not-allowed" }}
-            onClick={(e) => {
-              if (unsavedChanges) {
-                handleSaveWidget();
+          <div className="buttons-group d-flex">
+            {/* Edit Icon */}
+            <FontAwesomeIcon
+              icon={faPencil}
+              className="p-1 ms-1 btn-green p-1 rounded"
+              data-bs-toggle="tooltip"
+              data-bs-placement="top"
+              title="Edit the Widget"
+              style={{ cursor: "pointer" }}
+              onClick={(e) => {
+                SetEditWidgetVisiblity(true);
+              }}
+            />
+            {/* Save Icon */}
+            <FontAwesomeIcon
+              icon={faFloppyDisk}
+              className={`p-1 ms-1 ${
+                unsavedChanges ? "btn btn-danger" : "btn-green"
+              } p-1 rounded`}
+              data-bs-toggle="tooltip"
+              data-bs-placement="top"
+              title={
+                unsavedChanges ? "Your changes are saved" : "Save the Widget"
               }
-            }}
-          />
-          {/* Delete Icon */}
-          <FontAwesomeIcon
-            icon={faTrashCan}
-            className="p-1 ms-1 btn btn-danger p-1 rounded"
-            data-bs-toggle="tooltip"
-            data-bs-placement="top"
-            title="Delete the Widget"
-            onClick={(e) => {
-              setDeleteWidgetModal(true);
-            }}
-          />
+              style={{ cursor: unsavedChanges ? "pointer" : "not-allowed" }}
+              onClick={(e) => {
+                if (unsavedChanges) {
+                  handleSaveWidget();
+                }
+              }}
+            />
+            {/* Delete Icon */}
+            <FontAwesomeIcon
+              icon={faTrashCan}
+              className="p-1 ms-1 btn btn-danger p-1 rounded"
+              data-bs-toggle="tooltip"
+              data-bs-placement="top"
+              title="Delete the Widget"
+              onClick={(e) => {
+                setDeleteWidgetModal(true);
+              }}
+            />
+          </div>
         </div>
         <div className="d-flex justify-content-between align-items-center mb-3">
           {/* Draggable Title with Tooltip */}
@@ -327,14 +336,14 @@ function DashboardItem({
         </div>
         {/* Query Output */}
         {/* Resizable Chart */}
-        <div className={`${alignment}`}>
+        <div>
           <ResizableBox
             width={graphWidth}
             height={graphHeight}
             minConstraints={[300, 200]}
             maxConstraints={[1200, 800]}
             resizeHandles={["se"]}
-            className="border rounded bg-white p-3"
+            className={`${alignment} border rounded bg-white p-3`}
             onResizeStop={(event, { size }) => {
               setGraphHeight(size.height);
               setGraphWidth(size.width);
@@ -508,7 +517,7 @@ function DashboardItem({
                     </div>
                   </div>
                   {/* Show SQL Query Checkbox */}
-                  <div className=" mb-3 row">
+                  <div className="mb-3 row">
                     <div className="col-6">
                       <label
                         htmlFor="show-sql-query"
@@ -522,27 +531,26 @@ function DashboardItem({
                         type="checkbox"
                         id="show-sql-query"
                         className="form-check-input"
-                        onChange={(e) => setShowSQL(e.target.checked)}
-                        value={showSQL}
+                        checked={showSQL} // Bind to state
+                        onChange={(e) => setShowSQL(e.target.checked)} // Update state
                       />
                     </div>
                   </div>
+
                   {/* Show Notes Checkbox */}
-                  <div className=" mb-3 row">
+                  <div className="mb-3 row">
                     <div className="col-6">
-                      <label
-                        htmlFor="show-sql-query"
-                        className="form-check-label"
-                      >
+                      <label htmlFor="show-notes" className="form-check-label">
                         Show Notes
                       </label>
                     </div>
                     <div className="col-6">
                       <input
                         type="checkbox"
-                        id="show-sql-query"
+                        id="show-notes"
                         className="form-check-input"
-                        onChange={(e) => setNotesVisiblity(e.target.checked)}
+                        checked={showNotes} // Bind to state
+                        onChange={(e) => setNotesVisiblity(e.target.checked)} // Update state
                       />
                     </div>
                   </div>
@@ -572,68 +580,67 @@ function DashboardItem({
 
           {/* Modal Content */}
           <div className="modal show d-block" tabIndex="-1">
-      <div className="modal-dialog modal-dialog-centered">
-        <div className="modal-content bg-white rounded p-3">
-          {/* Modal Header */}
-          <div className="modal-header">
-            <h5 className="modal-title">
-              <FontAwesomeIcon className="mx-2" icon={faTrashCan} />
-              Delete <span className="text-green">Widget</span>
-            </h5>
-            <button
-              type="button"
-              className="btn-close"
-              aria-label="Close"
-              onClick={() => {
-                setDeleteWidgetModal(false);
-              }}
-            ></button>
-          </div>
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content bg-white rounded p-3">
+                {/* Modal Header */}
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    <FontAwesomeIcon className="mx-2" icon={faTrashCan} />
+                    Delete <span className="text-green">Widget</span>
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    aria-label="Close"
+                    onClick={() => {
+                      setDeleteWidgetModal(false);
+                    }}
+                  ></button>
+                </div>
 
-          {/* Modal Body */}
-          <div className="modal-body">
-            {/* Message */}
-            <p>
-              Do you really wish to delete{" "}
-              <span className="text-green">{title}</span> widget?
-            </p>
-            <p>
-              Type{" "}
-              <span className="text-danger">Delete</span> in the box below to
-              confirm
-            </p>
+                {/* Modal Body */}
+                <div className="modal-body">
+                  {/* Message */}
+                  <p>
+                    Do you really wish to delete{" "}
+                    <span className="text-green">{title}</span> widget?
+                  </p>
+                  <p>
+                    Type <span className="text-danger">Delete</span> in the box
+                    below to confirm
+                  </p>
 
-            {/* Input Field for Confirmation */}
-            <input
-              type="text"
-              className="form-control"
-              value={confirmationText}
-              onChange={handleInputChange}
-              placeholder="Type 'Delete' to confirm"
-            />
-          </div>
+                  {/* Input Field for Confirmation */}
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={confirmationText}
+                    onChange={handleInputChange}
+                    placeholder="Type 'Delete' to confirm"
+                  />
+                </div>
 
-          {/* Modal Footer */}
-          <div className="modal-footer">
-            <button
-              type="button"
-              className="btn btn-danger"
-              onClick={handleDelete}
-              disabled={!canDelete} // Disable if input doesn't match "Delete"
-            >
-              Confirm Deletion
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => setDeleteWidgetModal(false)}
-            >
-              Cancel
-            </button>
+                {/* Modal Footer */}
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={handleDelete}
+                    disabled={!canDelete} // Disable if input doesn't match "Delete"
+                  >
+                    Confirm Deletion
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setDeleteWidgetModal(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
         </>
       )}
     </>

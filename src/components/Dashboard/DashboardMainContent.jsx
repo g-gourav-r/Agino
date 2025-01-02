@@ -14,17 +14,19 @@ import createApiCall, { GET, PUT } from "../api/api";
 import {
   faDatabase,
   faExclamationCircle,
+  faRefresh,
   faSave,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MutatingDotsLoader from "../Loaders/MutatingDots";
 import { toast, ToastContainer } from "react-toastify";
 
-function DashboardMainContent({ setSelectedDataSource }) {
+function DashboardMainContent() {
   const [dataSources, setDataSources] = useState();
   const [loading, setLoading] = useState(false);
   const [currentDataSource, setCurrentDataSource] = useState("");
   const [dashboardContent, setDashboardContent] = useState([]);
+  const [metricsContent, setMetricsContent] = useState([]);
   const [stateChange, setChangeInState] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
 
@@ -62,7 +64,6 @@ function DashboardMainContent({ setSelectedDataSource }) {
   useEffect(() => {
     if (selectedDataSource) {
       setCurrentDataSource(selectedDataSource); // Set selectedDataSource to currentDataSource
-      setSelectedDataSource(selectedDataSource); // Update the parent component (if needed)
       handleFetchDashboards(selectedDataSource); // Fetch dashboards for the selected source
     }
   }, [selectedDataSource]); // Triggered when `selectedDataSource` is available or changes
@@ -101,7 +102,13 @@ function DashboardMainContent({ setSelectedDataSource }) {
         const sortedContent = [...sortedGraphs, ...metrics];
 
         // Process and set dashboard content
-        setDashboardContent(processData(sortedContent, id));
+        const { graphsData, metricsData } = processGraphAndMetrics(
+          sortedContent,
+          id
+        );
+        console.log(processGraphAndMetrics(sortedContent, id));
+        setDashboardContent(graphsData);
+        setMetricsContent(metricsData);
         setIsFetching(false); // Done fetching
       })
       .catch((error) => {
@@ -112,8 +119,9 @@ function DashboardMainContent({ setSelectedDataSource }) {
   };
 
   // Helper function to convert the API Response
-  const processData = (apiResponse, dataSource) => {
-    return apiResponse
+  const processGraphAndMetrics = (input, dataSource) => {
+    // Process graphs
+    const graphs = input
       .filter((item) => item.type === "graph")
       .map((item) => {
         const { graphoption, data, _id, query, title } = item;
@@ -158,6 +166,20 @@ function DashboardMainContent({ setSelectedDataSource }) {
           graphData: graphData,
         };
       });
+
+    // Process metrics
+    const metrics = input.filter((item) => item.type === "metrics");
+
+    const sortedMetrics = metrics.sort((a, b) => {
+      if (a.graphoption?.order < 0 && b.graphoption?.order < 0) {
+        return a.graphoption?.order - b.graphoption?.order;
+      }
+      if (a.graphoption?.order < 0) return 1;
+      if (b.graphoption?.order < 0) return -1;
+      return a.graphoption?.order - b.graphoption?.order;
+    });
+
+    return { graphsData: graphs, metricsData: sortedMetrics };
   };
 
   const handleDragEnd = (event) => {
@@ -215,12 +237,23 @@ function DashboardMainContent({ setSelectedDataSource }) {
       });
   };
 
+  const handleRefreshComponent = () => {
+    handleFetchDashboards(currentDataSource);
+  };
+
   return (
     <>
       <ToastContainer />
       {/*Header */}
       <div>
         <div className="bg-light m-1 p-2 border rounded d-flex align-items-center flex-wrap">
+          {currentDataSource && (
+            <FontAwesomeIcon
+              className="btn-green rounded p-1 me-1"
+              icon={faRefresh}
+              onClick={handleRefreshComponent}
+            />
+          )}
           <div className="status d-flex align-items-center">
             {stateChange && (
               <>
@@ -249,7 +282,6 @@ function DashboardMainContent({ setSelectedDataSource }) {
                 onChange={(e) => {
                   setCurrentDataSource(e.target.value);
                   handleFetchDashboards(e.target.value);
-                  setSelectedDataSource(e.target.value);
                 }}
               >
                 <option value="">Select a Data Source</option>{" "}
@@ -273,44 +305,84 @@ function DashboardMainContent({ setSelectedDataSource }) {
         </div>
       </div>
 
-      {/* Chat Body */}
+      {/* Dashboard Body Reusing ChatBody component*/}
       <div className="border chat-content overflow-auto mx-1 mb-2 rounded flex-grow-1 p-2 h-100">
         {loading || isFetching ? (
           <div className="d-flex justify-content-center align-items-center flex-grow-1 h-100">
             <MutatingDotsLoader />
           </div>
-        ) : dashboardContent.length > 0 ? (
-          <DndContext
-            sensors={sensors}
-            onDragEnd={handleDragEnd}
-            collisionDetection={closestCorners}
-          >
-            <DashboardColumns widgets={dashboardContent} />
-          </DndContext>
         ) : (
-          <div className="d-flex flex-column justify-content-center align-items-center flex-grow-1 h-100">
-            <h2>
-              Monitor your <span className="text-green">KPIs</span> with{" "}
-              <span className="text-green">Agino</span>
-            </h2>
-            <ul className="mt-2">
-              <li>
-                To create a dashboard, start a new{" "}
-                <span className="text-green">chat</span>.
-              </li>
-              <li>
-                Click on "<span className="text-green">Visualize Data</span>" to
-                generate <span className="text-green">graphs</span>.
-              </li>
-              <li>
-                Select your desired <span className="text-green">graph</span>.
-              </li>
-              <li>
-                Then add it to the <span className="text-green">dashboard</span>
-                .
-              </li>
-            </ul>
-          </div>
+          <>
+            {metricsContent.length > 0 || dashboardContent.length > 0 ? (
+              <>
+                {metricsContent.length > 0 && (
+                  <>
+                    {/* KPI Label placed outside of the card */}
+                    <div className="position-relative d-flex">
+                      {/* Cards section */}
+                      <div className="row flex-grow-1">
+                        {metricsContent.map((data, index) => (
+                          <div className="col-2 mt-2" key={index}>
+                            <div className="border bg-white p-1 my-1 text-center">
+                              <div className="card-body">
+                                <div className="d-flex align-items-center justify-content-center">
+                                  <div>
+                                    <h3 className="font-weight-bold text-dark text-center">
+                                      {data.data[0]
+                                        ? Object.values(data.data[0])[0]
+                                        : "No Value"}
+                                    </h3>
+                                    <h6 className="text-green text-center">
+                                      {data.title}
+                                    </h6>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {dashboardContent.length > 0 && (
+                  <DndContext
+                    sensors={sensors}
+                    onDragEnd={handleDragEnd}
+                    collisionDetection={closestCorners}
+                  >
+                    <DashboardColumns widgets={dashboardContent} />
+                  </DndContext>
+                )}
+              </>
+            ) : (
+              <div className="d-flex flex-column justify-content-center align-items-center flex-grow-1 h-100">
+                <h2>
+                  Monitor your <span className="text-green">KPIs</span> with{" "}
+                  <span className="text-green">Agino</span>
+                </h2>
+                <ul className="mt-2">
+                  <li>
+                    To create a dashboard, start a new{" "}
+                    <span className="text-green">chat</span>.
+                  </li>
+                  <li>
+                    Click on "<span className="text-green">Visualize Data</span>
+                    " to generate <span className="text-green">graphs</span>.
+                  </li>
+                  <li>
+                    Select your desired{" "}
+                    <span className="text-green">graph</span>.
+                  </li>
+                  <li>
+                    Then add it to the{" "}
+                    <span className="text-green">dashboard</span>.
+                  </li>
+                </ul>
+              </div>
+            )}
+          </>
         )}
       </div>
     </>
