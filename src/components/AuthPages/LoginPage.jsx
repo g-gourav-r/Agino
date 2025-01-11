@@ -15,6 +15,40 @@ function LoginPage() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resetPassword, setPasswordReset] = useState(false);
+  const [emailVerified, setEmailVerification] = useState(false);
+  const [code, setCode] = useState(["", "", "", "", "", ""]);
+  const [verificationEmail, setVerificationEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [verifyPassword, setVerifyPassword] = useState("");
+
+  const verifyEmailApi = createApiCall("request-password-reset", POST);
+  const resetPasswordApi = createApiCall("verify-2fa-reset-password", POST);
+
+  // Handle input change and auto-tab to next input
+  const handleInputChange = (e, index) => {
+    let value = e.target.value;
+
+    // If the value is a valid digit, update the state
+    if (/^\d$/.test(value) || value === "") {
+      const newCode = [...code];
+      newCode[index] = value;
+      setCode(newCode);
+
+      // If a digit is entered, focus the next input
+      if (value && index < 5) {
+        document.getElementById(`input-${index + 1}`).focus();
+      }
+    }
+  };
+
+  // Handle paste event for the entire 6-digit code
+  const handlePaste = (e) => {
+    const pastedValue = e.clipboardData.getData("Text");
+    if (/^\d{6}$/.test(pastedValue)) {
+      setCode(pastedValue.split(""));
+    }
+  };
 
   const handleAuth = () => {
     setLoading(true);
@@ -95,6 +129,86 @@ function LoginPage() {
       });
   };
 
+  const handleVerifyEmail = () => {
+    const verifyingEmailToast = toast.loading("Verifying the email...");
+
+    verifyEmailApi({
+      body: {
+        email: verificationEmail,
+      },
+    })
+      .then((response) => {
+        setEmailVerification(true); // Update state on success
+
+        // Update the toast to indicate success
+        toast.update(verifyingEmailToast, {
+          render: "Enter the code sent to your email.",
+          type: "success",
+          isLoading: false,
+          autoClose: 5000, // Automatically close after 5 seconds
+        });
+      })
+      .catch((error) => {
+        console.error(`Error: ${error}`);
+        // Update the toast to indicate failure
+        toast.update(verifyingEmailToast, {
+          render: `Error! ${error.message} Please try again.`,
+          type: "error",
+          isLoading: false,
+          autoClose: 5000, // Automatically close after 5 seconds
+        });
+      });
+  };
+
+  const resetStates = () => {
+    setCode(["", "", "", "", "", ""]);
+    setVerificationEmail("");
+    setNewPassword("");
+    setVerifyPassword("");
+    setEmailVerification(false);
+  };
+  const handleResetPassword = () => {
+    const joinedCode = code.join(""); // Combine the code array into a single string
+    const resetToast = toast.loading("Processing your password reset...");
+    if (newPassword !== verifyPassword) {
+      toast.update(resetToast, {
+        render: "Both passwords don't match.",
+        type: "error",
+        isLoading: false,
+        autoClose: 2500,
+      });
+      return;
+    }
+
+    resetPasswordApi({
+      body: {
+        email: verificationEmail,
+        code: joinedCode,
+        newPassword: newPassword,
+      },
+    })
+      .then((response) => {
+        toast.update(resetToast, {
+          render: "Your password has been successfully reset!",
+          type: "success",
+          isLoading: false,
+          autoClose: 5000,
+        });
+        setPasswordReset(false);
+        resetStates();
+      })
+      .catch((error) => {
+        toast.update(resetToast, {
+          render: `An error occurred: ${
+            error.message || "Unable to reset the password. Please try again."
+          }`,
+          type: "error",
+          isLoading: false,
+          autoClose: 5000,
+        });
+      });
+  };
+
   return (
     <>
       <ToastContainer />
@@ -104,9 +218,18 @@ function LoginPage() {
         </div>
         <div className="col-md-6 col-12 row g-0 d-flex align-items-center justify-content-center">
           <div className="col-10 login-card p-5 border rounded">
-            <h3 className="text-center">Welcome Back</h3>
-            <p className="mb-4 text-center text-green">Login to Agino</p>
-            <form onSubmit={handleSubmit} noValidate>
+            <div className={`login-heading ${resetPassword ? "d-none" : ""}`}>
+              <h3 className="text-center">Welcome Back</h3>
+              <p className="mb-4 text-center text-green">Login to Agino</p>
+            </div>
+            <div className={`login-heading ${!resetPassword ? "d-none" : ""}`}>
+              <h3 className="text-center">Reset Password</h3>
+            </div>
+            <form
+              className={resetPassword ? "d-none" : ""}
+              onSubmit={handleSubmit}
+              noValidate
+            >
               <div className="mb-3">
                 <div className="input-group justify-content-center">
                   <span className="input-group-text">
@@ -184,6 +307,150 @@ function LoginPage() {
                   <FontAwesomeIcon icon={faGoogle} />
                   &nbsp;&nbsp;Continue with Google
                 </button>
+              </div>
+              {/* Forgot Password Link */}
+              <div
+                className="text-start mt-3"
+                onClick={() => setPasswordReset(true)}
+              >
+                <a className="text-decoration-none text-muted forgot-password-text">
+                  Forgot Password?
+                </a>
+              </div>
+            </form>
+            <form className={!resetPassword ? "d-none" : ""} noValidate>
+              <div className={`my-3 ${emailVerified ? `d-none` : ``}`}>
+                <div className="input-group justify-content-center">
+                  <span className="input-group-text">
+                    <FontAwesomeIcon className="icon-width" icon={faEnvelope} />
+                  </span>
+                  <input
+                    type="email"
+                    className="form-control p-2"
+                    placeholder={"Enter your registered Email Id"}
+                    value={verificationEmail}
+                    name="email"
+                    onChange={(e) => setVerificationEmail(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+              <div className={!emailVerified ? "d-none" : ""}>
+                {/* 2FA Code Input Fields */}
+                <p className="text-center mt-3">
+                  Enter the code recieved via the{" "}
+                  <span className="text-green">email</span>
+                </p>
+                <div className="d-flex justify-content-center mt-3">
+                  {code.map((digit, index) => (
+                    <input
+                      key={index}
+                      id={`input-${index}`}
+                      type="text"
+                      value={digit}
+                      maxLength="1"
+                      className="form-control text-center m-2"
+                      style={{
+                        width: "50px",
+                        fontSize: "20px",
+                        letterSpacing: "5px",
+                        border: "1px solid #ccc",
+                        borderRadius: "8px",
+                      }}
+                      placeholder="-"
+                      onChange={(e) => handleInputChange(e, index)}
+                      onPaste={handlePaste} // Handle paste event
+                    />
+                  ))}
+                </div>
+                {/* New Password Input */}
+                <div className="mb-3">
+                  <div className="input-group">
+                    <span className="input-group-text">
+                      <FontAwesomeIcon className="icon-width" icon={faLock} />
+                    </span>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      className="form-control p-2"
+                      placeholder="Enter New Password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)} // Update state
+                      name="newPassword"
+                      required
+                    />
+                    <span
+                      className="input-group-text"
+                      onClick={togglePasswordVisibility}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <FontAwesomeIcon
+                        className={`icon-width ${
+                          showPassword ? "text-green" : ""
+                        }`}
+                        icon={showPassword ? faEyeSlash : faEye}
+                      />
+                    </span>
+                  </div>
+                </div>
+
+                {/* Verify Password Input */}
+                <div className="mb-3">
+                  <div className="input-group">
+                    <span className="input-group-text">
+                      <FontAwesomeIcon className="icon-width" icon={faLock} />
+                    </span>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      className="form-control p-2"
+                      placeholder="Re-enter New Password"
+                      value={verifyPassword}
+                      onChange={(e) => setVerifyPassword(e.target.value)} // Update state
+                      name="verifyPassword"
+                      required
+                    />
+                    <span
+                      className="input-group-text"
+                      onClick={togglePasswordVisibility}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <FontAwesomeIcon
+                        className={`icon-width ${
+                          showPassword ? "text-green" : ""
+                        }`}
+                        icon={showPassword ? faEyeSlash : faEye}
+                      />
+                    </span>
+                  </div>
+                </div>
+              </div>
+              {/* Submit Button */}
+              <div className="row g-2 mb-3">
+                <div className="col-6">
+                  <button
+                    type="button"
+                    className={`btn-green w-100 rounded p-1 ${
+                      loading ? "btn-green-disabled" : ""
+                    }`}
+                    disabled={loading}
+                    onClick={
+                      emailVerified ? handleResetPassword : handleVerifyEmail
+                    }
+                  >
+                    {emailVerified ? "Reset Password" : "Verify Email"}
+                  </button>
+                </div>
+                <div className="col-6">
+                  <button
+                    type="button"
+                    className="btn-black w-100 p-1 rounded"
+                    onClick={() => {
+                      setPasswordReset(false);
+                      resetStates();
+                    }}
+                  >
+                    Login
+                  </button>
+                </div>
               </div>
             </form>
           </div>
