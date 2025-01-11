@@ -141,37 +141,71 @@ function NotePadMainContent({ setRefresh, noteID }) {
   };
 
   const handleSubmit = async () => {
+    // Create the loading toast and store its ID for later updates
+    const emailtoastID = toast.loading("Your email is being sent...");
+
     try {
+      // Prepare the email data
       const emailList = emailData.to
         .split(",")
         .map((email) => email.trim())
         .filter((email) => email.length > 0);
 
+      // Validate the email addresses
       const isValidEmails = emailList.every((email) =>
         /^[\w.%+-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/.test(email)
       );
 
       if (!isValidEmails) {
-        toast.error("Please enter valid email addresses.");
+        toast.update(emailtoastID, {
+          render: "Please enter valid email addresses.",
+          type: "error",
+          isLoading: false,
+          autoClose: 5000, // Toast will close after 5 seconds
+        });
         return;
       }
 
+      // Validate the subject and body
       if (!emailData.subject) {
-        toast.error("Subject is required.");
+        toast.update(emailtoastID, {
+          render: "Subject is required.",
+          type: "error",
+          isLoading: false,
+          autoClose: 5000,
+        });
         return;
       }
 
       if (!emailData.body) {
-        toast.error("Body cannot be empty.");
+        toast.update(emailtoastID, {
+          render: "Body cannot be empty.",
+          type: "error",
+          isLoading: false,
+          autoClose: 5000,
+        });
         return;
       }
 
+      // Generate PDF
       const pdfBuffer = await generatePDF();
 
+      // Check if the PDF was generated successfully
+      if (!pdfBuffer) {
+        toast.update(emailtoastID, {
+          render: "Failed to generate PDF.",
+          type: "error",
+          isLoading: false,
+          autoClose: 5000,
+        });
+        return;
+      }
+
+      // Create FormData object and append data
       const formData = new FormData();
       formData.append("to", emailList.join(","));
       formData.append("subject", emailData.subject);
-      formData.append("text", emailData.body);
+      formData.append("body", emailData.body);
 
       const pdfBlob =
         pdfBuffer instanceof Blob
@@ -179,7 +213,7 @@ function NotePadMainContent({ setRefresh, noteID }) {
           : new Blob([pdfBuffer], { type: "application/pdf" });
       formData.append("file", pdfBlob, `${title}.pdf`);
 
-      // Send the API request
+      // Send the email via API
       await emailAPI({
         headers: {
           Authorization: `Bearer ${token}`,
@@ -187,12 +221,29 @@ function NotePadMainContent({ setRefresh, noteID }) {
         body: formData,
       });
 
-      toast.success("Email sent successfully!");
+      // Update toast to success message after email is sent
+      toast.update(emailtoastID, {
+        render: "Email sent successfully!",
+        type: "success",
+        isLoading: false,
+        autoClose: 5000, // Toast closes after 5 seconds
+      });
+
+      // Final cleanup
       setSendingMail(false);
       setEmailModal(false);
     } catch (error) {
       console.error("Error sending email:", error);
-      toast.error("Failed to send email. Please try again.");
+
+      // Update toast to error message if an error occurred
+      toast.update(emailtoastID, {
+        render: "Failed to send email. Please try again.",
+        type: "error",
+        isLoading: false,
+        autoClose: 5000,
+      });
+
+      // Final cleanup
       setSendingMail(false);
       setEmailModal(false);
     }
@@ -230,7 +281,6 @@ function NotePadMainContent({ setRefresh, noteID }) {
         const fetchNotesAPI = createApiCall(`api/notes/${noteID}`);
 
         fetchNotesAPI({
-          urlParams: { noteID: noteID },
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -400,7 +450,9 @@ function NotePadMainContent({ setRefresh, noteID }) {
       return;
     }
 
-    handleSave();
+    if (notesStatus === false) {
+      handleSave();
+    }
 
     try {
       const pdfBuffer = await generatePDF();
@@ -519,7 +571,9 @@ function NotePadMainContent({ setRefresh, noteID }) {
       toast.error("A title is needed before sharing.", { autoClose: 2000 });
       return;
     }
-    handleSave();
+    if (notesStatus === false) {
+      handleSave();
+    }
     setEmailModal(true);
   };
 
