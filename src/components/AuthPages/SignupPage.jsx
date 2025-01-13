@@ -11,11 +11,91 @@ import {
   faEyeSlash,
 } from "@fortawesome/free-solid-svg-icons";
 import { toast, ToastContainer } from "react-toastify";
+import { responsivePropType } from "react-bootstrap/esm/createUtilityClasses";
 
 function SignupPage() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [code, setCode] = useState(["", "", "", "", "", ""]);
+  const [verificationStatus, setVerificationStatus] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+
+  const sendVerificationCodeApi = createApiCall("send-2fa", POST);
+  const verifyVerificationCodeApi = createApiCall("verify-2fa", POST);
+
+  const sendVerificationCode = () => {
+    sendVerificationCodeApi({
+      body: {
+        email: userEmail,
+      },
+    });
+  };
+
+  const verifyCode = () => {
+    setLoading(true); // Optional: Add a loading state if required
+    const joinedCode = code.join("");
+
+    verifyVerificationCodeApi({
+      body: {
+        email: userEmail,
+        code: joinedCode,
+      },
+    })
+      .then((response) => {
+        setLoading(false);
+        toast.success("Code verified successfully! Redirecting to login...", {
+          autoClose: 3000,
+        });
+        setTimeout(() => {
+          navigate("/login");
+        }, 3000);
+      })
+      .catch(async (error) => {
+        setLoading(false);
+        let errorMessage = "An unknown error occurred";
+
+        if (error instanceof Response) {
+          try {
+            const errorResponse = await error.json();
+            errorMessage = errorResponse.message || errorMessage;
+          } catch (e) {
+            console.error("Failed to parse error response:", e);
+          }
+        } else {
+          errorMessage = error.message || errorMessage;
+        }
+
+        toast.error(`Verification failed: ${errorMessage}`, {
+          autoClose: 3000,
+        });
+      });
+  };
+
+  // Handle input change and auto-tab to next input
+  const handleInputChange = (e, index) => {
+    let value = e.target.value;
+
+    // If the value is a valid digit, update the state
+    if (/^\d$/.test(value) || value === "") {
+      const newCode = [...code];
+      newCode[index] = value;
+      setCode(newCode);
+
+      // If a digit is entered, focus the next input
+      if (value && index < 5) {
+        document.getElementById(`input-${index + 1}`).focus();
+      }
+    }
+  };
+
+  // Handle paste event for the entire 6-digit code
+  const handlePaste = (e) => {
+    const pastedValue = e.clipboardData.getData("Text");
+    if (/^\d{6}$/.test(pastedValue)) {
+      setCode(pastedValue.split(""));
+    }
+  };
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -70,16 +150,20 @@ function SignupPage() {
     })
       .then(() => {
         setLoading(false);
-        toast.success("Account registered successfully. Please login.", {
-          autoClose: 3000,
-        });
-        setTimeout(() => {
-          navigate("/login");
-        }, 3000);
+        sendVerificationCode();
+        toast.success(
+          "Account registered successfully. Verify your account to complete the registration.",
+          {
+            autoClose: 2500,
+          }
+        );
+        setVerificationStatus(true);
+        // Optionally navigate to the login page after 3 seconds
       })
       .catch(async (error) => {
         setLoading(false);
         let errorMessage = "An unknown error occurred";
+
         if (error instanceof Response) {
           try {
             const errorResponse = await error.json();
@@ -106,7 +190,11 @@ function SignupPage() {
           <div className="col-10 login-card p-5 border rounded">
             <h3 className="text-center">Unleash the Power of Your Data</h3>
             <p className="mb-4 text-center text-green">Signup to Agino</p>
-            <form onSubmit={handleSubmit} noValidate>
+            <form
+              onSubmit={handleSubmit}
+              noValidate
+              className={`${verificationStatus ? `d-none` : ``}`}
+            >
               <div className="mb-3">
                 <div className="input-group justify-content-center">
                   <span className="input-group-text">
@@ -132,6 +220,7 @@ function SignupPage() {
                     placeholder="Email ID"
                     name="email"
                     required
+                    onChange={(e) => setUserEmail(e.target.value)}
                   />
                 </div>
               </div>
@@ -226,6 +315,41 @@ function SignupPage() {
                 </button>
               </div>
             </form>
+            <div className={`${!verificationStatus ? `d-none` : ``}`}>
+              <p>
+                You're almost there! We've sent a{" "}
+                <span className="text-green">verification code</span> to your
+                email. Please enter the code below to proceed.
+              </p>
+              <div className="d-flex justify-content-center my-3">
+                {code.map((digit, index) => (
+                  <input
+                    key={index}
+                    id={`input-${index}`}
+                    type="text"
+                    value={digit}
+                    maxLength="1"
+                    className="form-control text-center m-2"
+                    style={{
+                      width: "50px",
+                      fontSize: "20px",
+                      letterSpacing: "5px",
+                      border: "1px solid #ccc",
+                      borderRadius: "8px",
+                    }}
+                    placeholder="-"
+                    onChange={(e) => handleInputChange(e, index)}
+                    onPaste={handlePaste} // Handle paste event
+                  />
+                ))}
+              </div>
+              <button
+                className="btn-green w-100 rounded p-1"
+                onClick={() => verifyCode()}
+              >
+                <span>Verify the code and create your account</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
