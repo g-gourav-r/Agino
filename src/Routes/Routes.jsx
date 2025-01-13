@@ -10,6 +10,7 @@ import NotFoundPage from "../components/404Page";
 import SessionExpired from "../components/SessionExpired";
 import Chat from "../components/Chat/Chat";
 import Dashboard from "../components/Dashboard/Dashboard";
+import Profile from "../components/ProfilePage/ProfilePage";
 
 function AppRouter() {
   return (
@@ -20,7 +21,7 @@ function AppRouter() {
         <Route path="/" element={<LoginPage />} />
         <Route path="*" element={<NotFoundPage />} />
         <Route path="/session-expired" element={<SessionExpired />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/profile" element={<Profile />} />
 
         {/* Protected Routes */}
         <Route
@@ -52,6 +53,14 @@ function AppRouter() {
           element={
             <ProtectedRoute>
               <Chat />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
             </ProtectedRoute>
           }
         />
