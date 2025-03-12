@@ -4,7 +4,7 @@ export const PUT = 'put';
 export const DELETE = 'delete';
 
 const createApiCall = (url, method) => (params = {}) => {
-    let apiEndpoint = " https://api.agino.tech/" + url;
+    let apiEndpoint = "https://primus-1ppt.onrender.com/" + url;
     const { body, urlParams, pathVariables, headers = {} } = params;
 
     // Handle URL parameters
